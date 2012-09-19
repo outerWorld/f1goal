@@ -5,6 +5,7 @@
 
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
@@ -21,7 +22,9 @@ typedef struct tagPsuedoHdr
 }stPsuedoHdr_t;
 
 
-#define BUF_SZ sizeof(struct iphdr)+sizeof(struct tcphdr)
+#define LOAD_SZ 16
+#define BUF_SZ sizeof(struct iphdr)+sizeof(struct tcphdr) + LOAD_SZ
+#define LOAD_OFF sizeof(struct iphdr)+sizeof(struct tcphdr)	
 static const g_buf_sz = BUF_SZ;
 static char g_buf[BUF_SZ] = { 0 };
 
@@ -142,6 +145,7 @@ static int create_tcp_hdr(struct tcphdr *tcp_hdr, unsigned short src_port, unsig
  */
 int main(int argc, char *argv[])
 {
+	struct timeval tv;
 	int raw_socket;
 	unsigned short src_port, dst_port;	
 	unsigned int src_ip, dst_ip;
@@ -188,7 +192,9 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	tcp_hdr->doff = 5;
-	tcp_hdr->check = tcp_chk_sum(6, (char*)tcp_hdr, sizeof(struct tcphdr), src_ip, dst_ip);
+	gettimeofday(&tv, NULL);
+	sprintf(g_buf+LOAD_OFF, "%ld.%ld",tv.tv_sec, tv.tv_usec);
+	tcp_hdr->check = tcp_chk_sum(6, (char*)tcp_hdr, sizeof(struct tcphdr) + LOAD_SZ, src_ip, dst_ip);
 	
 	rem_addr.sin_family = AF_INET;
 	rem_addr.sin_port = dst_port;	

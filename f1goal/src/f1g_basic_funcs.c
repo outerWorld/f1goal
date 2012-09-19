@@ -3,5 +3,4 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "f1g_cmd_line.h"
-
+#include "f1g_basic_funcs.h"

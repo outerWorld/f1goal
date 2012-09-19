@@ -2,6 +2,10 @@
 #ifndef __F1G_BASIC_TYPES_H
 #define __F1G_BASIC_TYPES_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum {
 	F1G_OK = 0x00,
 	F1G_ERR
@@ -41,5 +45,9 @@ typedef long long 				i64_t;
 typedef unsigned long long * 	u64_p;
 typedef long long * 			i64_p;
 typedef char * 					string_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -17,7 +17,7 @@
  */
 int main(int argc, char *argv[])
 {
-	cmd_line_obj_p p_cmd_obj;	
+	fprintf(stdout, "Hello!\n");	
 
-	
+	return 0;
 }
