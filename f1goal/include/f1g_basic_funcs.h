@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+void hex_print(FILE* fd, u8_p data, u32_t data_len);
+
 #ifdef __cplusplus
 }
 #endif

@@ -15,9 +15,15 @@
  * Output: the result of sending packet
  *
  */
-int main(int argc, char *argv[])
+i32_t main(i32_t argc, i8_p argv[])
 {
-	fprintf(stdout, "Hello!\n");	
+	i32_t i;
+	i8_t data[128];
+	
+	for (i=0; i<128; i++) {
+		data[i] = i;
+	}
+	hex_print(stdout, data, 125);
 
 	return 0;
 }
