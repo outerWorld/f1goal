@@ -8,7 +8,7 @@ DepPath=./dep
 ObjPath=./objs
 IncPath=-I./include -I./tools
 ToolPath=./tools
-F1goalLib_Objs=${ObjPath}/f1g_basic_funcs.o ${ObjPath}/f1g_cmd_line.o ${ObjPath}/f1g_eth_scrapy.o
+F1goalLib_Objs=${ObjPath}/f1g_basic_funcs.o ${ObjPath}/f1g_cmd_line.o ${ObjPath}/f1g_eth_scrapy.o ${ObjPath}/f1g_bit_array.o ${ObjPath}/f1g_http.o
 F1goalLib_S=libf1goal.a
 F1goalLib_D=libf1goal.so
 TOOL_LIB=${LibPath}/${F1goalLib_S} ${DepPath}/lib/libpcap.a
@@ -52,26 +52,40 @@ ${ObjPath}/f1g_cmd_line.o:${SrcPath}/f1g_cmd_line.c
 	${CC} -c $< -I./include
 	mv f1g_cmd_line.o ${ObjPath}
 
+${ObjPath}/f1g_bit_array.o:${SrcPath}/f1g_bit_array.c
+	${CC} -c $< -I./include
+	mv f1g_bit_array.o ${ObjPath}
+
+${ObjPath}/f1g_http.o:${SrcPath}/f1g_http.c
+	${CC} -c $< -I./include
+	mv f1g_http.o ${ObjPath}
+
 ${ObjPath}/f1g_eth_scrapy.o:${SrcPath}/f1g_eth_scrapy.c
 	${CC} -c $< -I./include
 	mv f1g_eth_scrapy.o ${ObjPath}
 
 
+${BinPath}/test:test.o ${LibPath}/${F1goalLib_S}
+	${CC} -o $@ $^
+
 .PHONY:all clean_obj clean_all
 
-all:libs  pksender pksender_v1 pkreceiver pkreceiver_v1
+all:libs  pksender pksender_v1 pkreceiver pkreceiver_v1 test
 
 pksender:${BinPath}/pksender
 pksender_v1:${BinPath}/pksender_v1
 pkreceiver:${BinPath}/pkreceiver
 pkreceiver_v1:${BinPath}/pkreceiver_v1
+test:${BinPath}/test
 
-libs:${LibPath}/${F1goalLib_S} ${LibPath}/${F1goalLib_D}
+#libs:${LibPath}/${F1goalLib_S} ${LibPath}/${F1goalLib_D}
+libs:${LibPath}/${F1goalLib_S}
 
 clean_all:clean_obj
-	rm -f ${BinPath}/pksender
+	rm -f ${BinPath}/*
 	rm -f ${LibPath}/${F1goalLib_S}
 	rm -f ${LibPath}/${F1goalLib_D}
+	rm -f ${BinPath}/test
 
 clean_obj:
 	rm -f ${ObjPath}/*.o

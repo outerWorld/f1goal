@@ -17,7 +17,7 @@ void hex_print(FILE* fd, u8_p data, u32_t data_len)
 	for (i=0; i<line; i++) {
 		fprintf(fd, "%08x    ", i*16);
 		for (j=i*16; j<data_len && j<(i+1)*16;j++) {
-			fprintf(fd, "%02x ", (unsigned char)(data[j]));
+			fprintf(fd, "%02x ", (u8_t)(data[j]));
 		}
 		for (; j<(i+1)*16; j++) {
 			fprintf(fd, "   ");

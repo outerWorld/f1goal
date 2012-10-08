@@ -4,7 +4,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif // __cplusplus
 
 enum {
 	F1G_OK = 0x00,
@@ -46,8 +46,12 @@ typedef unsigned long long * 	u64_p;
 typedef long long * 			i64_p;
 typedef char * 					string_t;
 
+
+//
+#define IP_STR_LEN	16
+
 #ifdef __cplusplus
 }
-#endif
+#endif // __cplusplus
 
 #endif

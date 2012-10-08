@@ -107,7 +107,7 @@ int eth_scrapy_control(int code)
 	switch(code) {
 		case ETH_SCRAPY_STOP:
 			run_flag = 0;
-			fprintf(stdout, "[%s,%d] please wait %s useconds to exit!\n", __FUNCTION__, __LINE__, wait_time); 
+			fprintf(stdout, "[%s,%d] please wait %d useconds to exit!\n", __FUNCTION__, __LINE__, wait_time); 
 			usleep(wait_time);
 			break;
 		case ETH_SCRAPY_START:
