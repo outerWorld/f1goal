@@ -94,7 +94,7 @@ i8_t find_str(const i8_p pstr, const i8_p pstr_end, const i8_p p_sub, i8_p *ploc
 
 	*ploc = pstr_end;
 
-	return F1G_ERR;
+	return F1G_OK;
 }
 
 i32_t substr(const i8_p pstr, const i8_p pstr_end, const i8_p prev, const i8_p post, i8_p pdata, i32_t data_size)
@@ -109,7 +109,7 @@ i32_t substr(const i8_p pstr, const i8_p pstr_end, const i8_p prev, const i8_p p
 
 	find_str(pb, pstr_end, post, &pe);
 
-	len = pe-pb+1-strlen(prev);
+	len = pe-pb-strlen(prev);
 	if (len > data_size) {
 		return 0;
 	}

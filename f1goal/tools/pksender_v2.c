@@ -65,15 +65,17 @@ static webhost_list_t sg_webhost_list = { 0 };
  * 	type\tsrc_ip\tsrc_port\tdst_ip\tdst_port\thost\tpath\tuser-agent\tcookie\t\n
  */
 
-static char lines_str[10240] = { 0 };
+static char lines_str[1024] = { 0 };
 static int _read_webhost_from_file(char *file, webhost_list_p p_obj)
 {
 	int fd;
-	char *buf;
-	char *pb, *pe;
+	char *buf, *buf_end;
+	char *pb, *pe, *pfield;
 	struct stat st;
 	int line_num;
+	char sep[16];
 	int len;
+	int i, type;
 	
 	if ((fd=open(file, O_RDONLY, 0)) <= 0) {
 		fprintf(stderr, "failed to open %s [Errno=%d]\n", file, errno);
@@ -98,8 +100,9 @@ static int _read_webhost_from_file(char *file, webhost_list_p p_obj)
 		return -1;
 	}
 
+	buf_end = buf + st.st_size-1;
 	pb = buf;
-	if (F1G_OK != find_str(pb, buf+st.st_size-1, "\n", &pe)) {
+	if (F1G_OK != find_str(pb, buf_end, "\n", &pe)) {
 		free(buf);
 		close(fd);
 		return -1;
@@ -120,6 +123,29 @@ static int _read_webhost_from_file(char *file, webhost_list_p p_obj)
 		}
 	}
 	p_obj->webhost_num = line_num;
+	
+	len = substr(pb, pe, "Sep=", ";", sep, 16);
+	if (len <= 0) {
+		memcpy(sep, "\t", 0);
+		sep[1] = '\0';
+	}
+	
+	for (i=0; i<line_num; i++) {
+		pb = pe+1;
+		find_str(pb, buf_end, "\n", &pe);
+		// type
+		find_str(pb, pe, sep, &pfield);	
+		memcpy(lines_str, pb, pfield-pb+1);
+		lines_str[pfield-pb] = '\0';
+		type = atoi(lines_str);
+		// src_ip
+		pb = pfield + 1;
+		find_str(pb, pe, sep, &pfield);
+		
+		if (pe == buf_end) {
+			break;
+		}
+	}
 	
 	printf("Lines=%d\n", line_num);
 
