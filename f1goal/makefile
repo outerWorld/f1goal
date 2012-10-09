@@ -1,5 +1,6 @@
 vpath include tools src
 CC=gcc
+CFlag=-g
 InstPath=/usr/bin/
 SrcPath=./src
 BinPath=./bin
@@ -29,39 +30,39 @@ ${LibPath}/${F1goalLib_D}:${F1goalLib_Objs}
 	${CC} -shared -o $@ $^
 
 ${ObjPath}/pksender.o:${ToolPath}/pksender.c
-	${CC} -c $< -I./include -I${DepPath}/include -I./tools
+	${CC} ${CFlag} -c $< -I./include -I${DepPath}/include -I./tools
 	mv pksender.o ${ObjPath}
 
 ${ObjPath}/pksender_v1.o:${ToolPath}/pksender_v1.c
-	${CC} -c $< -I./include -I${DepPath}/include -I./tools
+	${CC} ${CFlag} -c $< -I./include -I${DepPath}/include -I./tools
 	mv pksender_v1.o ${ObjPath}
 
 ${ObjPath}/pkreceiver.o:${ToolPath}/pkreceiver.c
-	${CC} -c $< -I./include -I${DepPath}/include -I./tools
+	${CC} ${CFlag} -c $< -I./include -I${DepPath}/include -I./tools
 	mv pkreceiver.o ${ObjPath}
 
 ${ObjPath}/pkreceiver_v1.o:${ToolPath}/pkreceiver_v1.c
-	${CC} -c $< -I./include -I${DepPath}/include -I./tools
+	${CC} ${CFlag} -c $< -I./include -I${DepPath}/include -I./tools
 	mv pkreceiver_v1.o ${ObjPath}
 
 ${ObjPath}/f1g_basic_funcs.o:${SrcPath}/f1g_basic_funcs.c
-	${CC} -c $< -I./include
+	${CC} ${CFlag} -c $< -I./include
 	mv f1g_basic_funcs.o ${ObjPath}
 
 ${ObjPath}/f1g_cmd_line.o:${SrcPath}/f1g_cmd_line.c
-	${CC} -c $< -I./include
+	${CC} ${CFlag} -c $< -I./include
 	mv f1g_cmd_line.o ${ObjPath}
 
 ${ObjPath}/f1g_bit_array.o:${SrcPath}/f1g_bit_array.c
-	${CC} -c $< -I./include
+	${CC} ${CFlag} -c $< -I./include
 	mv f1g_bit_array.o ${ObjPath}
 
 ${ObjPath}/f1g_http.o:${SrcPath}/f1g_http.c
-	${CC} -c $< -I./include
+	${CC} ${CFlag} -c $< -I./include
 	mv f1g_http.o ${ObjPath}
 
 ${ObjPath}/f1g_eth_scrapy.o:${SrcPath}/f1g_eth_scrapy.c
-	${CC} -c $< -I./include
+	${CC} ${CFlag} -c $< -I./include
 	mv f1g_eth_scrapy.o ${ObjPath}
 
 

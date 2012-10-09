@@ -3,8 +3,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/ip.h>
@@ -12,6 +14,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
+
 typedef struct tagPsuedoHdr
 {
     struct in_addr stSrcAddr;
@@ -147,6 +150,7 @@ int main(int argc, char *argv[])
 {
 	struct timeval tv;
 	int raw_socket;
+	int type;
 	unsigned short src_port, dst_port;	
 	unsigned int src_ip, dst_ip;
 	struct iphdr *ip_hdr;
@@ -192,9 +196,17 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	tcp_hdr->doff = 5;
-	gettimeofday(&tv, NULL);
-	sprintf(g_buf+LOAD_OFF, "%ld.%ld",tv.tv_sec, tv.tv_usec);
-	tcp_hdr->check = tcp_chk_sum(6, (char*)tcp_hdr, sizeof(struct tcphdr) + LOAD_SZ, src_ip, dst_ip);
+	if (type == 0) {
+		gettimeofday(&tv, NULL);
+		sprintf(g_buf+LOAD_OFF, "%ld.%ld",tv.tv_sec, tv.tv_usec);
+		load_size = LOAD_SZ;
+	} else if (type == 1) {
+		load_size = _read_http_from_file(g_buf+LOAD_OFF, BUF_SZ-LOAD_OFF);
+		if (load_size <= 0) {
+			return -1;
+		}
+	}
+	tcp_hdr->check = tcp_chk_sum(6, (char*)tcp_hdr, sizeof(struct tcphdr) + load_size, src_ip, dst_ip);
 	
 	rem_addr.sin_family = AF_INET;
 	rem_addr.sin_port = dst_port;	

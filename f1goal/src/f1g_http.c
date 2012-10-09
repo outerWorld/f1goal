@@ -220,7 +220,7 @@ i8_t http_object_parse_data(http_object_p p_obj, string_t data, u16_t data_len)
 	i8_p pe;
 
 	if (p_obj->buf_sz < data_len) {
-		http_object_reset_buf(p_obj, NULL, data_len);
+		http_object_reset_buffer(p_obj, NULL, data_len);
 	}
 
 	pb = data;
@@ -253,7 +253,7 @@ i8_t http_object_parse_file(http_object_p p_obj, string_t file)
 	}
 
 	if (p_obj->buf_sz < st.st_size) {
-		if (F1G_ERR == http_object_reset_buf(NULL, st.st_size)) {
+		if (F1G_ERR == http_object_reset_buffer(p_obj, NULL, st.st_size)) {
 			close(fd);
 			return F1G_ERR;
 		}
