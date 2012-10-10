@@ -150,12 +150,12 @@ int main(int argc, char *argv[])
 {
 	struct timeval tv;
 	int raw_socket;
-	int type;
 	unsigned short src_port, dst_port;	
 	unsigned int src_ip, dst_ip;
 	struct iphdr *ip_hdr;
 	struct tcphdr *tcp_hdr;
 	struct sockaddr_in rem_addr;
+	int load_size;
 	
 	if (argc < 5) {
 		fprintf(stderr, "%s,%d number of arguments is not proper!\n", __FUNCTION__, __LINE__);
@@ -196,16 +196,10 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	tcp_hdr->doff = 5;
-	if (type == 0) {
-		gettimeofday(&tv, NULL);
-		sprintf(g_buf+LOAD_OFF, "%ld.%ld",tv.tv_sec, tv.tv_usec);
-		load_size = LOAD_SZ;
-	} else if (type == 1) {
-		load_size = _read_http_from_file(g_buf+LOAD_OFF, BUF_SZ-LOAD_OFF);
-		if (load_size <= 0) {
-			return -1;
-		}
-	}
+	gettimeofday(&tv, NULL);
+	sprintf(g_buf+LOAD_OFF, "%ld.%ld",tv.tv_sec, tv.tv_usec);
+	load_size = LOAD_SZ;
+
 	tcp_hdr->check = tcp_chk_sum(6, (char*)tcp_hdr, sizeof(struct tcphdr) + load_size, src_ip, dst_ip);
 	
 	rem_addr.sin_family = AF_INET;

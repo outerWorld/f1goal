@@ -23,9 +23,7 @@ all:pksender pkreceiver pksender_v2
 clean_all: clean_obj
 	rm -f pksender
 	rm -f pksender_v2
-	rm -f pksender_v1
 	rm -f pkreceiver
-	rm -f pkreceiver_v1
 
 clean_obj:
 	rm -f *.o

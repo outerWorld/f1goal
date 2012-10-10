@@ -102,19 +102,21 @@ i32_t substr(const i8_p pstr, const i8_p pstr_end, const i8_p prev, const i8_p p
 	i8_p pb;
 	i8_p pe;
 	i32_t len;
+	i32_t prev_len;
 
 	if (find_str(pstr, pstr_end, prev, &pb) != F1G_OK) {
 		return 0;
 	}
 
-	find_str(pb, pstr_end, post, &pe);
+	prev_len = strlen(prev);
+	find_str(pb+prev_len, pstr_end, post, &pe);
 
-	len = pe-pb-strlen(prev);
+	len = pe-pb-prev_len;
 	if (len > data_size) {
 		return 0;
 	}
 	
-	memcpy(pdata, pb+strlen(prev), len);
+	memcpy(pdata, pb+prev_len, len);
 
 	return len;
 }

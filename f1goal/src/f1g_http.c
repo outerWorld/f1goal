@@ -125,7 +125,7 @@ i8_t http_object_reset_buffer(http_object_p p_obj, i8_p obj_buf, u32_t buf_sz)
 
 i8_t http_object_reset(http_object_p p_obj)
 {
-	memset(p_obj->obj_buf, 0x00, p_obj->buf_sz);
+	memset(p_obj->obj_buf, 0x00, p_obj->data_len);
 	p_obj->data_len = 0;
 	memset(p_obj->hdr_set, 0x00, HTTP_HDR_NUM*sizeof(i8_p));
 	memset(p_obj->hdr_len_set, 0x00, HTTP_HDR_NUM*sizeof(i16_t));

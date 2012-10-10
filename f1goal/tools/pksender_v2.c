@@ -16,6 +16,7 @@
 #include <errno.h>
 
 #include "f1g_basic_funcs.h"
+#include "f1g_data_op.h"
 #include "f1g_http.h"
 
 typedef struct tagPsuedoHdr
@@ -31,15 +32,15 @@ typedef struct tagPsuedoHdr
 #define PATH_STR_SIZE	256
 #define IP_STR_SIZE		16
 #define COOKIE_STR_SIZE	1024
-#define UA_STR_SIZE		128
+#define UA_STR_SIZE		256
 #define TYPE_STR_SIZE	16
 #define PORT_STR_SIZE	8
 typedef struct _webhost_info_s {
-	char type[TYPE_STR_SIZE];
+	int type;
 	char src_ip[IP_STR_SIZE];
-	char src_port[PORT_STR_SIZE];
+	unsigned short src_port;
 	char dst_ip[IP_STR_SIZE];
-	char dst_port[PORT_STR_SIZE];
+	unsigned short dst_port;
 	char host[HOST_STR_SIZE];
 	char path[PATH_STR_SIZE];
 	char ua[UA_STR_SIZE];
@@ -52,7 +53,7 @@ typedef struct _webhost_list_s {
 }webhost_list_t, *webhost_list_p;
 
 #define LOAD_SZ 16
-#define BUF_SZ sizeof(struct iphdr)+sizeof(struct tcphdr) + LOAD_SZ
+#define BUF_SZ 2048
 #define LOAD_OFF sizeof(struct iphdr)+sizeof(struct tcphdr)	
 static const g_buf_sz = BUF_SZ;
 static char g_buf[BUF_SZ] = { 0 };
@@ -75,7 +76,8 @@ static int _read_webhost_from_file(char *file, webhost_list_p p_obj)
 	int line_num;
 	char sep[16];
 	int len;
-	int i, type;
+	int i, type, max_col;
+	data_field_t df;
 	
 	if ((fd=open(file, O_RDONLY, 0)) <= 0) {
 		fprintf(stderr, "failed to open %s [Errno=%d]\n", file, errno);
@@ -118,6 +120,7 @@ static int _read_webhost_from_file(char *file, webhost_list_p p_obj)
 	if (line_num > 1) {
 		p_obj->p_webhosts = (webhost_info_p)malloc(sizeof(webhost_info_t)*line_num);
 		if (NULL == p_obj->p_webhosts) {
+			fprintf(stderr, "[%s,%d] Malloc failed!\n", __FUNCTION__, __LINE__);
 			free(buf);
 			return -1;
 		}
@@ -128,27 +131,53 @@ static int _read_webhost_from_file(char *file, webhost_list_p p_obj)
 	if (len <= 0) {
 		memcpy(sep, "\t", 0);
 		sep[1] = '\0';
+	} else {
+		sep[len] = '\0';
 	}
+
+	len = substr(pb, pe, "MaxCol=", ";", lines_str, 16);
+	if (len <= 0) {
+		max_col = 20;
+	} else {
+		lines_str[len] = '\0';
+		max_col = atoi(lines_str);
+	}
+	data_field_init(&df, max_col, 0);
 	
 	for (i=0; i<line_num; i++) {
 		pb = pe+1;
 		find_str(pb, buf_end, "\n", &pe);
-		// type
-		find_str(pb, pe, sep, &pfield);	
-		memcpy(lines_str, pb, pfield-pb+1);
-		lines_str[pfield-pb] = '\0';
-		type = atoi(lines_str);
-		// src_ip
-		pb = pfield + 1;
-		find_str(pb, pe, sep, &pfield);
+		data_field_read_buf(&df, pb, pe, sep);
+		//data_field_print(&df);
+		p_obj->p_webhosts[i].type = data_field_get_i32(&df, 0, 10);
+		data_field_copy_str(&df, 1, p_obj->p_webhosts[i].src_ip, IP_STR_SIZE);	
+		p_obj->p_webhosts[i].src_port = (u16_t)data_field_get_i32(&df, 2, 10);
+		data_field_copy_str(&df, 3, p_obj->p_webhosts[i].dst_ip, IP_STR_SIZE);	
+		p_obj->p_webhosts[i].dst_port = (u16_t)data_field_get_i32(&df, 4, 10);
+		switch (p_obj->p_webhosts[i].type) {
+			case 0:
+				break;
+			case 1:
+				data_field_copy_str(&df, 5, p_obj->p_webhosts[i].host, HOST_STR_SIZE);	
+				data_field_copy_str(&df, 6, p_obj->p_webhosts[i].path, PATH_STR_SIZE);	
+				data_field_copy_str(&df, 7, p_obj->p_webhosts[i].ua, UA_STR_SIZE);	
+				data_field_copy_str(&df, 8, p_obj->p_webhosts[i].cookie, COOKIE_STR_SIZE);	
+				break;
+			default:
+				break;
+		}
 		
+		data_field_clean_items(&df);
 		if (pe == buf_end) {
 			break;
 		}
+		
 	}
 	
-	printf("Lines=%d\n", line_num);
+	//fprintf(stdout, "Lines=%d\n", line_num);
+	p_obj->webhost_num = line_num;
 
+	data_field_free_items(&df);
 	free(buf);
 	close(fd);
 	return st.st_size;
@@ -228,12 +257,12 @@ static int create_raw_socket()
 	return sock;
 }
 
-static int create_ip_hdr(struct iphdr *ip_hdr, unsigned int src_ip, unsigned int dst_ip)
+static int create_ip_hdr(struct iphdr *ip_hdr, unsigned int src_ip, unsigned int dst_ip, int len)
 {
 	memset(ip_hdr, 0x00, sizeof(struct iphdr));
 	ip_hdr->ihl = 5;
 	ip_hdr->version = 0x04;
-	ip_hdr->tot_len = htons(g_buf_sz);
+	ip_hdr->tot_len = htons(len);
 	ip_hdr->id = htons(getpid());
 	ip_hdr->frag_off = 0;
 	ip_hdr->ttl = 255;
@@ -267,13 +296,17 @@ static int create_tcp_hdr(struct tcphdr *tcp_hdr, unsigned short src_port, unsig
 
 
 static char req_line[128] = { 0 };
+static char log[2048] = { 0 };
+static int log_len = 0;
 /*
- * Usage: pksender conf-file
+ * Usage: pksender conf-file sleep_time
  */
 int main(int argc, char *argv[])
 {
 	int i;
+	unsigned int sleep_time;
 	struct timeval tv;
+	struct timeval tv2;
 	int raw_socket;
 	int type;
 	unsigned short src_port, dst_port;	
@@ -284,8 +317,9 @@ int main(int argc, char *argv[])
 	webhost_info_p p_wbi;
 	http_object_p p_ho;
 	int load_size;
+	int data_len;
 	
-	if (argc < 1) {
+	if (argc < 3) {
 		fprintf(stderr, "%s,%d number of arguments is not proper!\n", __FUNCTION__, __LINE__);
 		return -1;
 	}
@@ -301,11 +335,15 @@ int main(int argc, char *argv[])
 		close(raw_socket);
 		return -1;
 	}
+	sleep_time = atoi(argv[2]);
 
 	p_ho = http_object_create(NULL, 0);
 
 	for (i=0; i<sg_webhost_list.webhost_num; i++) {
+		sleep(sleep_time);
 		p_wbi = &sg_webhost_list.p_webhosts[i];
+		log_len = 0;
+		log[0] = '\0';
 		http_object_reset(p_ho);
 		if (inet_pton(AF_INET, p_wbi->src_ip, &src_ip) <= 0) {
 			fprintf(stderr, "%s,%d source ip[%s] is not proper!\n", __FUNCTION__, __LINE__, p_wbi->src_ip);
@@ -316,16 +354,10 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "%s,%d source ip[%s] is not proper!\n", __FUNCTION__, __LINE__, p_wbi->dst_ip);
 			return -1;
 		}
-		src_port = htons(atoi(p_wbi->src_port));
-		dst_port = htons(atoi(p_wbi->dst_port));
-		type = atoi(p_wbi->type);
-
-	
-		ip_hdr = (struct iphdr*)g_buf;
-		if (create_ip_hdr(ip_hdr, src_ip, dst_ip) != 0) {
-			fprintf(stderr, "%s,%d create ip header fail!\n", __FUNCTION__, __LINE__);
-			break;
-		}
+		src_port = htons(p_wbi->src_port);
+		dst_port = htons(p_wbi->dst_port);
+		type = p_wbi->type;
+		data_len = sizeof(struct iphdr) + sizeof(struct tcphdr);
 
 		tcp_hdr = (struct tcphdr*)(g_buf+sizeof(struct iphdr));
 		if (create_tcp_hdr(tcp_hdr, src_port, dst_port) != 0) {
@@ -337,6 +369,7 @@ int main(int argc, char *argv[])
 			gettimeofday(&tv, NULL);
 			sprintf(g_buf+LOAD_OFF, "%ld.%ld",tv.tv_sec, tv.tv_usec);
 			load_size = LOAD_SZ;
+			data_len += load_size;
 		} else if (type == 1) {
 			req_line[0] = '\0';
 			strcat(req_line, "GET ");
@@ -344,21 +377,36 @@ int main(int argc, char *argv[])
 			strcat(req_line, " HTTP/1.1");
 			http_object_add_header(p_ho, HTTP_HDR_REQ_LINE, req_line, strlen(req_line));
 			http_object_add_header(p_ho, HTTP_HDR_HOST, p_wbi->host, strlen(p_wbi->host));
-			http_object_add_header(p_ho, HTTP_HDR_UA, p_wbi->ua, strlen(p_wbi->ua));
 			http_object_add_header(p_ho, HTTP_HDR_COOKIE, p_wbi->cookie, strlen(p_wbi->cookie));
-			http_object_print(p_ho);
+			http_object_add_header(p_ho, HTTP_HDR_UA, p_wbi->ua, strlen(p_wbi->ua));
+			http_object_add_header(p_ho, HTTP_HDR_END, "", 0);
+			//http_object_print(p_ho);
 			memcpy(g_buf+LOAD_OFF, p_ho->obj_buf, p_ho->data_len);
 			load_size = p_ho->data_len;
+			data_len += load_size;
 		}
 		tcp_hdr->check = tcp_chk_sum(6, (char*)tcp_hdr, sizeof(struct tcphdr) + load_size, src_ip, dst_ip);
+
+		ip_hdr = (struct iphdr*)g_buf;
+		if (create_ip_hdr(ip_hdr, src_ip, dst_ip, data_len) != 0) {
+			fprintf(stderr, "%s,%d create ip header fail!\n", __FUNCTION__, __LINE__);
+			break;
+		}
 	
 		rem_addr.sin_family = AF_INET;
 		rem_addr.sin_port = dst_port;	
 		rem_addr.sin_addr.s_addr = dst_ip;
-
-		if (sendto(raw_socket, g_buf, g_buf_sz, 0, (struct sockaddr*)&rem_addr, sizeof(struct sockaddr)) == -1) {
+		gettimeofday(&tv, NULL);
+		if (sendto(raw_socket, g_buf, data_len, 0, (struct sockaddr*)&rem_addr, sizeof(struct sockaddr)) == -1) {
 			fprintf(stderr, "%s,%d send packet fail[%s]!\n", __FUNCTION__, __LINE__, strerror(errno));
 			break;
+		}
+		gettimeofday(&tv2, NULL);
+		if (type == 0) {
+		} else if (type == 1) {
+			sprintf(log, "%s%s|%s|%u|%s|%u|%ld.%ld|", p_wbi->host, p_wbi->path, p_wbi->src_ip, p_wbi->src_port, p_wbi->dst_ip, p_wbi->dst_port, tv.tv_sec, tv.tv_usec);
+			sprintf(log+strlen(log), "%ld.%ld|",tv2.tv_sec, tv2.tv_usec); 
+			fprintf(stdout, "%s\n", log);
 		}
 	}
 
@@ -369,8 +417,8 @@ int main(int argc, char *argv[])
 
 	close(raw_socket);
 	raw_socket = 0;
+	//fprintf(stdout, "%s,%d send packet successfully!\n", __FUNCTION__, __LINE__);
 	http_object_destroy(p_ho);
 	p_ho = NULL;
-	fprintf(stdout, "%s,%d send packet successfully!\n", __FUNCTION__, __LINE__);
 	return 0;
 }

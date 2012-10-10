@@ -65,7 +65,7 @@ i8_t bit_array_set_bit(bit_array_p p_obj, u8_t bit_seq)
 
 i8_t bit_array_reset(bit_array_p p_obj)
 {
-	if (NULL != p_obj->bits) {
+	if (NULL == p_obj->bits) {
 		return F1G_ERR;
 	}
 
