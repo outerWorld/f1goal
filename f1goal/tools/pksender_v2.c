@@ -52,7 +52,7 @@ typedef struct _webhost_list_s {
 	webhost_info_p p_webhosts;
 }webhost_list_t, *webhost_list_p;
 
-#define LOAD_SZ 16
+#define LOAD_SZ 32
 #define BUF_SZ 2048
 #define LOAD_OFF sizeof(struct iphdr)+sizeof(struct tcphdr)	
 static const g_buf_sz = BUF_SZ;
@@ -367,7 +367,7 @@ int main(int argc, char *argv[])
 		tcp_hdr->doff = 5;
 		if (type == 0) {
 			gettimeofday(&tv, NULL);
-			sprintf(g_buf+LOAD_OFF, "%ld.%ld",tv.tv_sec, tv.tv_usec);
+			sprintf(g_buf+LOAD_OFF, "&timestamp=%ld.%ld;",tv.tv_sec, tv.tv_usec);
 			load_size = LOAD_SZ;
 			data_len += load_size;
 		} else if (type == 1) {
@@ -403,6 +403,9 @@ int main(int argc, char *argv[])
 		}
 		gettimeofday(&tv2, NULL);
 		if (type == 0) {
+			sprintf(log, "%s|%u|%s|%u|%ld.%ld|", p_wbi->src_ip, p_wbi->src_port, p_wbi->dst_ip, p_wbi->dst_port, tv.tv_sec, tv.tv_usec);
+			sprintf(log+strlen(log), "%ld.%ld|",tv2.tv_sec, tv2.tv_usec); 
+			fprintf(stdout, "%s\n", log);
 		} else if (type == 1) {
 			sprintf(log, "%s%s|%s|%u|%s|%u|%ld.%ld|", p_wbi->host, p_wbi->path, p_wbi->src_ip, p_wbi->src_port, p_wbi->dst_ip, p_wbi->dst_port, tv.tv_sec, tv.tv_usec);
 			sprintf(log+strlen(log), "%ld.%ld|",tv2.tv_sec, tv2.tv_usec); 

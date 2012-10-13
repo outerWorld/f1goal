@@ -10,6 +10,7 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <netinet/ether.h>
+#include <arpa/inet.h>
 
 #include "pcap.h"
 #include "f1g_basic_funcs.h"
@@ -43,8 +44,10 @@ static void handler(u_char *user, const struct pcap_pkthdr *pkt_hdr, const u_cha
 	struct ether_header * eth_hdr = NULL;
 	unsigned short src_port, dst_port;
 	char *pb, *pe;
+	int len;
 
 	//gettimeofday(&tv, NULL);
+	//fprintf(stdout, "%s,%d\n", __FUNCTION__, __LINE__);
 	packet_info_p pkt_info = (packet_info_p)pkt_hdr;
 	eth_hdr = (struct ether_header*)pkt_data;
 	if (ntohs(eth_hdr->ether_type) != ETHERTYPE_IP) {
@@ -52,16 +55,21 @@ static void handler(u_char *user, const struct pcap_pkthdr *pkt_hdr, const u_cha
 		return;
 	}
 	
+	//fprintf(stdout, "%s,%d\n", __FUNCTION__, __LINE__);
 	g_log_buf[0] = '\0';
 	ip_hdr = (struct iphdr*)(pkt_data + 14);
-	if (inet_ntop(AF_INET, &ip_hdr->saddr, &src_ip) < 0) {
+	if (inet_ntop(AF_INET, &ip_hdr->saddr, (char*)src_ip, 24) == NULL) {
+		fprintf(stderr, "[%ld.%ld] get source ip[%08x] fail\n", tv.tv_sec, tv.tv_usec, ip_hdr->saddr);
 		return;	
 	}
 	
-	if (inet_ntop(AF_INET, &ip_hdr->daddr, &dst_ip) < 0) {
+	//fprintf(stdout, "%s,%d\n", __FUNCTION__, __LINE__);
+	if (inet_ntop(AF_INET, &ip_hdr->daddr, (char*)dst_ip, 24) == NULL) {
+		fprintf(stderr, "[%ld.%ld] get dest ip fail\n", tv.tv_sec, tv.tv_usec);
 		return;
 	}
 	
+	//fprintf(stdout, "%s,%d\n", __FUNCTION__, __LINE__);
 	trans_off = 14 + (ip_hdr->ihl*4);
 	if (ip_hdr->protocol == IPPROTO_TCP) {
 		strcat(g_log_buf, "tcp|");
@@ -78,14 +86,24 @@ static void handler(u_char *user, const struct pcap_pkthdr *pkt_hdr, const u_cha
 		dst_port = ntohs(udp_hdr->dest);
 		load = (char *)(pkt_data + trans_off + sizeof(struct udphdr));
 	} else {
+		fprintf(stderr, "[%ld.%ld] Protocol error\n", tv.tv_sec, tv.tv_usec);
 		return;
 	}
 	
-	int len = substr(load, load+load_sz-1, "&o_url=", "&", tbuf, 1024);
+	//fprintf(stdout, "%s,%d\n", __FUNCTION__, __LINE__);
+	len = substr(load, load+load_sz-1, "&o_url=", "&", tbuf, 1024);
 	if (len > 0)
 	{
 		sprintf(g_log_buf + strlen(g_log_buf), "%s|%ld.%ld|%s|%u|%s|%u", tbuf, pkt_hdr->ts.tv_sec, pkt_hdr->ts.tv_usec, src_ip, src_port, dst_ip, dst_port);
 		//sprintf(g_log_buf + strlen(g_log_buf), "%s|%ld.%ld|%s|%u|%s|%u", load, tv.tv_sec, tv.tv_usec, src_ip, src_port, dst_ip, dst_port);
+		fprintf(stdout, "%s\n", g_log_buf);
+	}
+	//fprintf(stdout, "for timestamp, len = %d\n", len);
+	len = substr(load, load+load_sz-1, "&timestamp=", ";", tbuf, 1024);
+	//fprintf(stdout, "for timestamp, len = %d\n", len);
+	if (len > 0)
+	{
+		sprintf(g_log_buf + strlen(g_log_buf), "%s|%ld.%ld|%s|%u|%s|%u", tbuf, pkt_hdr->ts.tv_sec, pkt_hdr->ts.tv_usec, src_ip, src_port, dst_ip, dst_port);
 		fprintf(stdout, "%s\n", g_log_buf);
 	}
 }
@@ -113,7 +131,7 @@ int main(int argc, char *argv[])
 	if (eth_scrapy_init(argv[2], filter) < 0) {
 		fprintf(stderr, "%s,%d eth_scrapy_init fail!\n", __FUNCTION__, __LINE__);
 		return 1;
-	}	
+	}
 
 	if (eth_scrapy_reg(handler) < 0) {
 		fprintf(stderr, "%s,%d eth_scrapy_reg fail!\n", __FUNCTION__, __LINE__);
