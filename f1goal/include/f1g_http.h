@@ -16,6 +16,7 @@ typedef enum {
 	HTTP_HDR_VERSION,
 	HTTP_HDR_HOST,
 	HTTP_HDR_UA,
+	HTTP_HDR_REFER,
 	HTTP_HDR_COOKIE,
 	HTTP_HDR_END,
 	HTTP_HDR_REQ_LINE,
@@ -77,7 +78,7 @@ i8_t http_object_parse_file(http_object_p p_obj, string_t file);
 /*
  * get http headers and http content from one buffer
  */
-i8_t http_object_parse_data(http_object_p p_obj, string_t data, u16_t data_len);
+i8_t http_object_parse_data(http_object_p p_obj, i8_p data, u16_t data_len);
 
 #ifdef __cplusplus
 }

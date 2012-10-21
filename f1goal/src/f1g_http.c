@@ -9,7 +9,9 @@
 #include <fcntl.h>
 
 
+#include "f1g_basic_funcs.h"
 #include "f1g_http.h"
+
 
 
 typedef struct _http_header_info_s {
@@ -22,6 +24,7 @@ http_header_info_t http_header_info[] = {
 	{HTTP_HDR_VERSION, 0, ""},
 	{HTTP_HDR_PATH, 0, ""},
 	{HTTP_HDR_HOST, 6, "Host: "},
+	{HTTP_HDR_REFER, 8, "Referer:  "},
 	{HTTP_HDR_UA, 12, "User-Agent: "},
 	{HTTP_HDR_COOKIE, 8, "Cookie: "},
 	{HTTP_HDR_END, 0, ""},
@@ -214,17 +217,65 @@ i8_t http_object_get_header(http_object_p p_obj, HTTP_HDR_E header_id, i8_p buf,
 	return F1G_OK;
 }
 
-i8_t http_object_parse_data(http_object_p p_obj, string_t data, u16_t data_len)
+i8_t http_object_parse_data(http_object_p p_obj, i8_p data, u16_t data_len)
 {
 	i8_p pb;
 	i8_p pe;
+	i8_p pdata_end;
 
 	if (p_obj->buf_sz < data_len) {
 		http_object_reset_buffer(p_obj, NULL, data_len);
 	}
 
+	pdata_end = data + data_len - 1;
 	pb = data;
-	pe = strstr(pb, "\r\n");
+	// Get the http line 1, request or response line.
+	find_str(pb, pdata_end, "\r\n", &pe);
+	if (pe == pdata_end) {
+		return F1G_ERR;
+	}
+
+	// parse the request or response line.
+	switch(*pb) {
+		case 'H':
+			if (cmp_str("HTTP/", pb, 5) == 0) {
+			} else if (cmp_str("HEAD ", pb, 5) == 0) {
+			} else {
+				return F1G_ERR;
+			}
+			break;
+		case 'G':
+			if (cmp_str("GET ", pb, 4) == 0) {
+			} else {
+				return F1G_ERR;
+			}
+			break;
+		case 'P':
+			if (cmp_str("POST ", pb, 5) == 0) {
+			} else if (cmp_str("PUT ", pb, 4) == 0) {
+			} else {
+				return F1G_ERR;
+			}
+			break;
+		case 'D':
+			if (cmp_str("DELETE ", pb, 7) == 0) {
+			} else {
+				return F1G_ERR;
+			}
+			break;
+		case 'T':
+			if (cmp_str("TRACE ", pb, 6) == 0) {
+			} else {
+				return F1G_ERR;
+			}
+			break;
+		case 'O':
+			if (cmp_str("OPTIONS ", pb, 8) == 0) {
+			} else {
+				return F1G_ERR;
+			}
+			break;
+	}
 
 	while (pb != pe) {
 	}

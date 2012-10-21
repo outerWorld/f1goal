@@ -73,6 +73,15 @@ i8_t cmp_str(const i8_p pstr1, const i8_p pstr2, i32_t len)
 	}
 }
 
+i8_t cmp_str2(const i8_p pstr1, i32_t str1_len, const i8_p pstr2, i32_t str2_len)
+{
+	if (str1_len < str2_len) {
+		return -1;
+	}
+	
+	return cmp_str(pstr1, pstr2, str2_len);
+}
+
 i8_t find_str(const i8_p pstr, const i8_p pstr_end, const i8_p p_sub, i8_p *ploc)
 {
 	i8_p pb;
@@ -92,7 +101,7 @@ i8_t find_str(const i8_p pstr, const i8_p pstr_end, const i8_p p_sub, i8_p *ploc
 		pb++;
 	}
 
-	*ploc = pstr_end;
+	*ploc = NULL;
 
 	return F1G_OK;
 }
@@ -104,7 +113,8 @@ i32_t substr(const i8_p pstr, const i8_p pstr_end, const i8_p prev, const i8_p p
 	i32_t len;
 	i32_t prev_len;
 
-	if (find_str(pstr, pstr_end, prev, &pb) != F1G_OK) {
+	find_str(pstr, pstr_end, prev, &pb);
+	if (pb == pstr_end) {
 		return 0;
 	}
 
@@ -119,4 +129,40 @@ i32_t substr(const i8_p pstr, const i8_p pstr_end, const i8_p prev, const i8_p p
 	memcpy(pdata, pb+prev_len, len);
 
 	return len;
+}
+
+i8_t skip_char(i8_p * p_pdata, i32_t len, i8_t ch)
+{
+	i8_p ptmp = *p_pdata + len;
+	
+	while (*p_pdata<ptmp && ch==*(*p_pdata)) {
+		(*p_pdata)++;
+	}
+
+	return F1G_OK;
+}
+
+i8_t skip_chars(i8_p * p_pdata, i32_t len, i8_p chars, i32_t chars_len)
+{
+	return F1G_OK;
+}
+
+i8_t skip_space(i8_p * p_pdata, i32_t len)
+{
+	return skip_char(p_pdata, len, ' ');
+}
+
+i8_t skip_tab(i8_p * p_pdata, i32_t len)
+{
+	return skip_char(p_pdata, len, '\t');
+}
+
+i8_t strip_char(i8_p p_str, i32_t len, i8_t ch, i8_p *p_e)
+{
+	*p_e = p_str + len - 1;
+	while (*p_e >= p_str && *(*p_e)==ch) {
+		(*p_e)--;
+	}
+
+	return F1G_OK;
 }
