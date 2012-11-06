@@ -104,7 +104,8 @@ static int _read_webhost_from_file(char *file, webhost_list_p p_obj)
 
 	buf_end = buf + st.st_size-1;
 	pb = buf;
-	if (F1G_OK != find_str(pb, buf_end, "\n", &pe)) {
+	find_str(pb, buf_end, "\n", &pe);
+	if (NULL == pe) {
 		free(buf);
 		close(fd);
 		return -1;
@@ -147,6 +148,12 @@ static int _read_webhost_from_file(char *file, webhost_list_p p_obj)
 	for (i=0; i<line_num; i++) {
 		pb = pe+1;
 		find_str(pb, buf_end, "\n", &pe);
+		if (NULL == pe) {
+			pe = buf_end;
+		}
+		if (pb >= pe) {
+			break;
+		}
 		data_field_read_buf(&df, pb, pe, sep);
 		//data_field_print(&df);
 		p_obj->p_webhosts[i].type = data_field_get_i32(&df, 0, 10);

@@ -114,12 +114,15 @@ i32_t substr(const i8_p pstr, const i8_p pstr_end, const i8_p prev, const i8_p p
 	i32_t prev_len;
 
 	find_str(pstr, pstr_end, prev, &pb);
-	if (pb == pstr_end) {
+	if (pb == NULL) {
 		return 0;
 	}
 
 	prev_len = strlen(prev);
 	find_str(pb+prev_len, pstr_end, post, &pe);
+	if (NULL == pe) {
+		pe = pstr_end;
+	}
 
 	len = pe-pb-prev_len;
 	if (len > data_size) {

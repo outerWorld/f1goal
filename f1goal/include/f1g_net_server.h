@@ -27,6 +27,12 @@ typedef enum {
 	EXEC_MODEL_NUM
 }EXEC_MODEL_E;
 
+typedef enum {
+	MUL_QUE_MODEL = 0x00,
+	SINGLE_QUE_MODEL,
+	QUE_MODEL_NUM
+}QUE_MODEL_E;
+
 typedef struct _net_server_s {
 	net_object_p 	net_obj;
 	i8_t 		 	que_num;
