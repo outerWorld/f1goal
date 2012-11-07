@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "f1g_basic_funcs.h"
 #include "f1g_template.h"
 
 static char sg_buf[2048] = { 0 };
