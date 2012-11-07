@@ -11,7 +11,7 @@ DepPath=./dep
 ObjPath=./objs
 IncPath=-I./include -I./tools
 ToolPath=./tools
-F1goalLib_Objs=${ObjPath}/f1g_basic_funcs.o ${ObjPath}/f1g_string.o ${ObjPath}/f1g_log.o ${ObjPath}/f1g_cmd_line.o ${ObjPath}/f1g_data_op.o ${ObjPath}/f1g_eth_scrapy.o ${ObjPath}/f1g_bit_array.o ${ObjPath}/f1g_http.o ${ObjPath}/f1g_http_parser.o ${ObjPath}/f1g_template.o ${ObjPath}/f1g_data_set.o
+F1goalLib_Objs=${ObjPath}/f1g_basic_funcs.o ${ObjPath}/f1g_string.o ${ObjPath}/f1g_log.o ${ObjPath}/f1g_cmd_line.o ${ObjPath}/f1g_data_op.o ${ObjPath}/f1g_eth_scrapy.o ${ObjPath}/f1g_bit_array.o ${ObjPath}/f1g_http.o ${ObjPath}/f1g_http_parser.o ${ObjPath}/f1g_template.o ${ObjPath}/f1g_data_set.o ${ObjPath}/f1g_net_forge.o
 F1goalLib_S=libf1goal.a
 F1goalLib_D=libf1goal.so
 TOOL_LIB=${LibPath}/${F1goalLib_S} ${DepPath}/lib/libpcap.a
@@ -116,6 +116,10 @@ ${ObjPath}/f1g_data_set.o:${SrcPath}/f1g_data_set.c
 ${ObjPath}/f1g_template.o:${SrcPath}/f1g_template.c
 	${CC} ${CFlag} -c $< -I./include
 	mv f1g_template.o ${ObjPath}
+
+${ObjPath}/f1g_net_forge.o:${SrcPath}/f1g_net_forge.c
+	${CC} ${CFlag} -c $< -I./include
+	mv f1g_net_forge.o ${ObjPath}
 
 .PHONY:all clean_obj clean_all rel_all rel_tool
 
