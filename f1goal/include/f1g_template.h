@@ -51,9 +51,10 @@ typedef struct _f1g_template_s {
 	i32_t		node_num;
 	i32_t		node_size;
 	node_info_p p_nodes;
-
+#ifdef _SINGLE_THREAD_USING
 	u8_t		parse_status;
 	u8_t		exec_status;
+#endif // _SINGLE_THREAD_USING
 	i32_t		data_len;
 	i32_t 		buf_size;
 	i8_p 		buf;

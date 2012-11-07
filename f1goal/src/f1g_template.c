@@ -25,8 +25,10 @@ i32_t f1g_template_init(f1g_template_p p_tpl, i32_t ini_node_size)
 		p_tpl->p_nodes = p_nodes;
 	}
 	
+#ifdef _SINGLE_THREAD_USING
 	p_tpl->parse_status = PARSE_INIT;
 	p_tpl->exec_status = EXEC_INIT;
+#endif // _SINGLE_THREAD_USING
 
 	return F1G_OK;
 }
@@ -43,7 +45,9 @@ i32_t f1g_template_print(f1g_template_p p_tpl)
 		p_node = &p_tpl->p_nodes[i];
 		fprintf(stdout, "\t  Node[%d]: name[%s], node type [%d], var type [%d], data len [%d], data [%.*s]\n", i, p_node->var_name, p_node->node_type, p_node->var_type, p_node->data_len, p_node->data_len, p_node->data);
 	}
+#ifdef _SINGLE_THREAD_USING
 	fprintf(stdout, "\t  Parse Status: [%d], Execute Status: [%d]\n", p_tpl->parse_status, p_tpl->exec_status);
+#endif // _SINGLE_THREAD_USING
 	
 	fprintf(stdout, "=======================================\n");
 
@@ -171,27 +175,27 @@ i32_t f1g_template_parse(f1g_template_p p_tpl, string_t file)
 	struct stat st;
 	i8_t * pb, *pe, * p_vtag_b, *p_vtag_e;
 
+#ifdef _SINGLE_THREAD_USING
+		p_tpl->parse_status = PARSE_ERR;
+#endif // _SINGLE_THREAD_USING
+
 	fd = open(file, O_RDONLY, 0);
 	if (fd < 0) {
-		p_tpl->parse_status = PARSE_ERR;
 		return F1G_ERR;
 	}
 
 	if (fstat(fd, &st) != 0) {
-		p_tpl->parse_status = PARSE_ERR;
 		close(fd);
 		return F1G_ERR;
 	}
 	
 	if (st.st_size <= 0) {
-		p_tpl->parse_status = PARSE_ERR;
 		close(fd);
 		return F1G_ERR;
 	}
 
 	p_tpl->buf = (i8_p)malloc(st.st_size);
 	if (NULL == p_tpl->buf) {
-		p_tpl->parse_status = PARSE_ERR;
 		close(fd);
 		return F1G_ERR;
 	}
@@ -201,7 +205,6 @@ i32_t f1g_template_parse(f1g_template_p p_tpl, string_t file)
 		close(fd);
 		free(p_tpl->buf);
 		p_tpl->buf = NULL;
-		p_tpl->parse_status = PARSE_ERR;
 		return F1G_ERR;
 	}
 	p_tpl->data_len = st.st_size;
@@ -215,7 +218,6 @@ i32_t f1g_template_parse(f1g_template_p p_tpl, string_t file)
 		p_vtag_b = NULL;
 		p_vtag_e = NULL;
 		if (F1G_OK != find_variable(pb, &pe, &p_vtag_b, &p_vtag_e, &var_found)) {
-			p_tpl->parse_status = PARSE_ERR;
 			return F1G_ERR;
 		}
 		
@@ -227,20 +229,17 @@ i32_t f1g_template_parse(f1g_template_p p_tpl, string_t file)
 		if (p_vtag_b-pb-1 > 0) {
 			ret = f1g_template_add_node(p_tpl, NODE_TYPE_BLK_DATA, NULL, 0, pb, p_vtag_b-pb-1);
 			if (F1G_OK != ret) {
-				p_tpl->parse_status = PARSE_ERR;
 				return F1G_ERR;
 			}
 		}
 
 		if (RST_FOUND_VAR == var_found) {
 			if (p_vtag_e-p_vtag_b-1 > MAX_VAR_LEN) {
-				p_tpl->parse_status = PARSE_ERR;
 				return F1G_ERR;
 			}
 	
 			ret = f1g_template_add_node(p_tpl, NODE_TYPE_VAR, p_vtag_b+1, p_vtag_e-p_vtag_b-1, NULL, 0);
 			if (F1G_OK != ret) {
-				p_tpl->parse_status = PARSE_ERR;
 				return F1G_ERR;
 			}
 		}
@@ -248,7 +247,9 @@ i32_t f1g_template_parse(f1g_template_p p_tpl, string_t file)
 		pb = p_vtag_e + 1;
 	}
 	
+#ifdef _SINGLE_THREAD_USING
 	p_tpl->parse_status = PARSE_OK;
+#endif // _SINGLE_THREAD_USING
 
 	return F1G_OK;
 }
@@ -261,6 +262,10 @@ i32_t f1g_template_exec(f1g_template_p p_tpl, value_p p_buf, data_set_p ds)
 	node_info_p p_node = NULL;
 	value_p p_val = NULL;
 
+#ifdef _SINGLE_THREAD_USING
+	p_tpl->exec_status = EXEC_INIT;
+#endif // _SINGLE_THREAD_USING
+
 	remain = p_buf->val_size;
 	for (i=0; i<p_tpl->node_num; i++) {
 		p_node = &p_tpl->p_nodes[i];
@@ -272,7 +277,9 @@ i32_t f1g_template_exec(f1g_template_p p_tpl, value_p p_buf, data_set_p ds)
 					// TODO nothing.
 				} else {
 					if (remain < p_val->val_len) {
+#ifdef _SINGLE_THREAD_USING
 						p_tpl->exec_status = EXEC_BUF_NOT_ENOUGH;
+#endif // _SINGLE_THREAD_USING
 						return F1G_ERR;
 					} else {
 						// TODO nothing.
@@ -286,7 +293,9 @@ i32_t f1g_template_exec(f1g_template_p p_tpl, value_p p_buf, data_set_p ds)
 
 			case NODE_TYPE_BLK_DATA:
 				if (remain < p_node->data_len) {
+#ifdef _SINGLE_THREAD_USING
 					p_tpl->exec_status = EXEC_BUF_NOT_ENOUGH;
+#endif // _SINGLE_THREAD_USING
 					return F1G_ERR;
 				} else {
 					// TODO nothing.
@@ -303,7 +312,9 @@ i32_t f1g_template_exec(f1g_template_p p_tpl, value_p p_buf, data_set_p ds)
 	}
 
 	p_buf->val_len = used;
+#ifdef _SINGLE_THREAD_USING
 	p_tpl->exec_status = EXEC_OK;
+#endif // _SINGLE_THREAD_USING
 
 	return F1G_OK;
 }
