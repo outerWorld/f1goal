@@ -26,6 +26,7 @@ i32_t f1g_template_init(f1g_template_p p_tpl, i32_t ini_node_size)
 	}
 	
 	p_tpl->parse_status = PARSE_INIT;
+	p_tpl->exec_status = EXEC_INIT;
 
 	return F1G_OK;
 }
@@ -42,7 +43,7 @@ i32_t f1g_template_print(f1g_template_p p_tpl)
 		p_node = &p_tpl->p_nodes[i];
 		fprintf(stdout, "\t  Node[%d]: name[%s], node type [%d], var type [%d], data len [%d], data [%.*s]\n", i, p_node->var_name, p_node->node_type, p_node->var_type, p_node->data_len, p_node->data_len, p_node->data);
 	}
-	fprintf(stdout, "\t  Parse Status: [%d]\n", p_tpl->parse_status);
+	fprintf(stdout, "\t  Parse Status: [%d], Execute Status: [%d]\n", p_tpl->parse_status, p_tpl->exec_status);
 	
 	fprintf(stdout, "=======================================\n");
 
@@ -252,8 +253,58 @@ i32_t f1g_template_parse(f1g_template_p p_tpl, string_t file)
 	return F1G_OK;
 }
 
-i32_t f1g_template_exec(f1g_template_p p_tpl, i8_p p_buf, i32_t buf_size, data_set_p ds)
+i32_t f1g_template_exec(f1g_template_p p_tpl, value_p p_buf, data_set_p ds)
 {
+	i32_t i = 0;
+	i32_t used = 0;
+	i32_t remain = 0;
+	node_info_p p_node = NULL;
+	value_p p_val = NULL;
+
+	remain = p_buf->val_size;
+	for (i=0; i<p_tpl->node_num; i++) {
+		p_node = &p_tpl->p_nodes[i];
+		switch(p_node->node_type) {
+			case NODE_TYPE_VAR:
+				p_val = NULL;
+				data_set_get_val(ds, p_node->var_name, &p_val);
+				if (NULL == p_val) {
+					// TODO nothing.
+				} else {
+					if (remain < p_val->val_len) {
+						p_tpl->exec_status = EXEC_BUF_NOT_ENOUGH;
+						return F1G_ERR;
+					} else {
+						// TODO nothing.
+					}
+					
+					memcpy(p_buf->val+used, p_val->val, p_val->val_len);
+					used += p_val->val_len;
+					remain = p_buf->val_size - used;
+				}
+				break;
+
+			case NODE_TYPE_BLK_DATA:
+				if (remain < p_node->data_len) {
+					p_tpl->exec_status = EXEC_BUF_NOT_ENOUGH;
+					return F1G_ERR;
+				} else {
+					// TODO nothing.
+				}
+
+				memcpy(p_buf->val+used, p_node->data, p_node->data_len);
+				used += p_node->data_len;
+				remain = p_buf->val_size - used;
+				break;
+
+			default:
+				break;
+		}
+	}
+
+	p_buf->val_len = used;
+	p_tpl->exec_status = EXEC_OK;
+
 	return F1G_OK;
 }
 
@@ -263,12 +314,12 @@ i32_t f1g_template_extent_cap(f1g_template_p p_tpl, i32_t ext_node_size)
 	
 	p_tmp_nodes = p_tpl->p_nodes;
 
-	p_tpl->p_nodes = (node_info_p)malloc(ext_node_size);
+	p_tpl->p_nodes = (node_info_p)malloc(ext_node_size*sizeof(node_info_t));
 	if (NULL == p_tpl->p_nodes) {
 		p_tpl->p_nodes = p_tmp_nodes;
 		return F1G_ERR;
 	}
-	memset(&p_tpl->p_nodes, 0x00, sizeof(node_info_t)*ext_node_size);
+	memset(p_tpl->p_nodes, 0x00, sizeof(node_info_t)*ext_node_size);
 	if (p_tmp_nodes) {
 		memcpy(p_tpl->p_nodes, p_tmp_nodes, p_tpl->node_num*sizeof(node_info_t));
 		free(p_tmp_nodes);

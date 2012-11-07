@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <time.h>
 #include "f1g_basic_funcs.h"
 
 void hex_print(FILE* fd, u8_p data, u32_t data_len)
@@ -168,4 +169,28 @@ i8_t strip_char(i8_p p_str, i32_t len, i8_t ch, i8_p *p_e)
 	}
 
 	return F1G_OK;
+}
+
+
+i32_t time_interval_tv(struct timeval *tvb, struct timeval *tve, struct timeval *tv_out)
+{
+	memset(tv_out, 0x00, sizeof(struct timeval));
+
+	tv_out->tv_sec = tve->tv_sec - tvb->tv_sec;
+	tv_out->tv_usec = tve->tv_usec - tvb->tv_usec;
+	if (tv_out->tv_usec < 0) {
+		tv_out->tv_usec += 1000000;
+		tv_out->tv_sec--;
+	}
+
+	return F1G_OK;
+}
+
+i32_t time_interval(struct timeval *tvb, struct timeval *tve)
+{
+	struct timeval tv;
+
+	time_interval_tv(tvb, tve, &tv);
+
+	return tv.tv_sec*1000000+tv.tv_usec;
 }

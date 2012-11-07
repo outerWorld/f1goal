@@ -31,6 +31,12 @@ enum {
 	PARSE_ERR,
 };
 
+enum {
+	EXEC_INIT = 0x00,
+	EXEC_OK,
+	EXEC_BUF_NOT_ENOUGH,
+};
+
 
 typedef struct _node_info_s {
 	u8_t 	node_type;
@@ -47,6 +53,7 @@ typedef struct _f1g_template_s {
 	node_info_p p_nodes;
 
 	u8_t		parse_status;
+	u8_t		exec_status;
 	i32_t		data_len;
 	i32_t 		buf_size;
 	i8_p 		buf;
@@ -60,7 +67,7 @@ i32_t f1g_template_print(f1g_template_p p_tpl);
 
 i32_t f1g_template_parse(f1g_template_p p_tpl, string_t file);
 
-i32_t f1g_template_exec(f1g_template_p p_tpl, i8_p p_buf, i32_t buf_size, data_set_p ds);
+i32_t f1g_template_exec(f1g_template_p p_tpl, value_p p_buf, data_set_p ds);
 
 i32_t f1g_template_add_node(f1g_template_p p_tpl, u8_t node_type, i8_p var_name, u8_t var_name_len, i8_p p_data, i32_t data_len);
 

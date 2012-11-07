@@ -9,17 +9,17 @@ i32_t key_info_extent_cap(key_info_p p_key, i32_t ext_size)
 {
 	i8_p p_val;
 
-	p_val = p_key->val;
-	p_key->val = (i8_p)malloc(ext_size);
-	if (NULL == p_key->val) {
-		p_key->val = p_val;
+	p_val = p_key->val.val;
+	p_key->val.val = (i8_p)malloc(ext_size);
+	if (NULL == p_key->val.val) {
+		p_key->val.val = p_val;
 		return F1G_ERR;
 	}
-	memset(p_key->val, 0x00, ext_size);
+	memset(p_key->val.val, 0x00, ext_size);
 	if (p_val) {
-		memcpy(p_key->val, p_val, p_key->val_len);
+		memcpy(p_key->val.val, p_val, p_key->val.val_len);
 	}
-	p_key->val_size = ext_size;
+	p_key->val.val_size = ext_size;
 
 	return F1G_OK;
 }
@@ -38,11 +38,11 @@ i32_t data_set_init(data_set_p p_ds, i32_t key_size)
 	p_ds->key_size = key_size;
 
 	for (i=0; i<key_size; i++) {
-		p_ds->p_keys[i].val = (i8_p)malloc(KEY_VAL_SIZE);
-		if (NULL == p_ds->p_keys[i].val) {
+		p_ds->p_keys[i].val.val = (i8_p)malloc(KEY_VAL_SIZE);
+		if (NULL == p_ds->p_keys[i].val.val) {
 			return F1G_ERR;
 		}
-		p_ds->p_keys[i].val_size = KEY_VAL_SIZE;
+		p_ds->p_keys[i].val.val_size = KEY_VAL_SIZE;
 	}
 
 	return F1G_OK;
@@ -79,23 +79,23 @@ i32_t data_set_add_int_var(data_set_p p_ds, string_t var_name, void *in_var_val,
 	}
 
 	p_key = &p_ds->p_keys[p_ds->key_num];
+	if (NULL==var_name || strlen(var_name)<=0) {
+		return F1G_ERR;
+	}
+	if (strlen(var_name) > MAX_KEY_LEN) {
+		return F1G_ERR;
+	}
+	strcpy(p_key->key, var_name);
 
 	if (NULL==fmt || strlen(fmt)<=0) {
 		// TODO, not supported now!
 	} else {
-		len = snprintf(p_key->val, p_key->val_size, fmt, *(long long*)in_var_val);
-		if (len > p_key->val_size) {
+		len = snprintf(p_key->val.val, p_key->val.val_size, fmt, *(long long*)in_var_val);
+		if (len > p_key->val.val_size) {
 			key_info_extent_cap(p_key, len+len/2);
 		}
-		p_key->val_len = snprintf(p_key->val, p_key->val_size, fmt, *(long long*)in_var_val);
+		p_key->val.val_len = snprintf(p_key->val.val, p_key->val.val_size, fmt, *(long long*)in_var_val);
 	}
-
-	if (strlen(var_name) > MAX_KEY_LEN) {
-		return F1G_ERR;	
-	}
-	strncpy(p_key->key, var_name, MAX_KEY_LEN);
-	p_key->key[MAX_KEY_LEN] = '\0';
-
 	p_ds->key_num++;
 
 	return F1G_OK;
@@ -111,19 +111,36 @@ i32_t data_set_add_str_var(data_set_p p_ds, string_t var_name, void *in_var_val,
 	}
 	p_key = &p_ds->p_keys[p_ds->key_num];
 
-	if (p_key->val_size < val_len) {
+	if (NULL==var_name || strlen(var_name)<=0) {
+		return F1G_ERR;
+	}
+	if (strlen(var_name) > MAX_KEY_LEN) {
+		return F1G_ERR;
+	}
+	strcpy(p_key->key, var_name);
+
+	if (p_key->val.val_size < val_len) {
 		key_info_extent_cap(p_key, val_len+val_len/2);
 	}
-	
-	if (strlen(var_name) > MAX_KEY_LEN) {
-		return F1G_ERR;	
-	}
-	strncpy(p_key->key, var_name, MAX_KEY_LEN);
-	p_key->key[MAX_KEY_LEN] = '\0';
-	memcpy(p_key->val, in_var_val, val_len);
-	p_key->val[val_len] = '\0';
+	memcpy(p_key->val.val, (i8_p)in_var_val, val_len);
+	p_key->val.val_len = val_len;
 
 	p_ds->key_num++;
+
+	return F1G_OK;
+}
+
+i32_t data_set_get_val(data_set_p p_ds, string_t key, value_p *val)
+{
+	i32_t i = 0;
+	
+	*val = NULL;
+	for (i=0; i<p_ds->key_num; i++) {
+		if (strncasecmp(key, p_ds->p_keys[i].key, strlen(key)) == 0) {
+			*val = &p_ds->p_keys[i].val;
+			return F1G_OK;
+		}
+	}
 
 	return F1G_OK;
 }
@@ -134,9 +151,9 @@ i32_t data_set_destroy(data_set_p p_ds)
 
 	if (p_ds->p_keys) {
 		for (i=0; i<p_ds->key_size; i++) {
-			if (p_ds->p_keys[i].val) {
-				free(p_ds->p_keys[i].val);
-				p_ds->p_keys[i].val = NULL;
+			if (p_ds->p_keys[i].val.val) {
+				free(p_ds->p_keys[i].val.val);
+				p_ds->p_keys[i].val.val = NULL;
 			}
 		}
 		free(p_ds->p_keys);

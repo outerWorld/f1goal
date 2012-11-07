@@ -46,6 +46,11 @@ typedef unsigned long long * 	u64_p;
 typedef long long * 			i64_p;
 typedef char * 					string_t;
 
+typedef struct _value_s {
+	i32_t	val_size;
+	i32_t	val_len;
+	i8_p	val;
+}value_t, *value_p;
 
 //
 #define IP_STR_LEN	16

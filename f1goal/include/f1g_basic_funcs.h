@@ -44,6 +44,11 @@ i8_t skip_tab(i8_p * p_pdata, i32_t len);
  */
 i8_t strip_char(i8_p p_str, i32_t len, i8_t ch, i8_p *p_e);
 
+// return interval by sec:usec
+i32_t time_interval_tv(struct timeval *tvb, struct timeval *tve, struct timeval *tv_out);
+// return interval by unit USeconds
+i32_t time_interval(struct timeval *tvb, struct timeval *tve);
+
 #ifdef __cplusplus
 }
 #endif
