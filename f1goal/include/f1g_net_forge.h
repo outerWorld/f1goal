@@ -20,7 +20,7 @@ typedef struct _psuedo_hdr_s {
     struct in_addr 	dst_addr;
     u8_t			place_holder;
     u8_t	 		protocol;
-    u16_t	 		length;
+    u32_t	 		length;
 }psuedo_hdr_t, *psuedo_hdr_p;
 
 typedef struct _net_forge_para_s {
@@ -36,6 +36,7 @@ typedef struct _net_forge_para_s {
 }net_forge_para_t, *net_forge_para_p;
 
 u16_t chk_sum(u16_p addr, u16_t len);
+i32_t chk_sum2(u16_p addr, u16_t len);
 
 u16_t tcp_chk_sum(u8_t proto, i8_p packet, u16_t length, u32_t src_ip, u32_t dst_ip);
 

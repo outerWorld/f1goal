@@ -41,22 +41,43 @@ u16_t chk_sum(u16_p addr, u16_t len)
 	return (answer);
 }
 
+i32_t chk_sum2(u16_p addr, u16_t len)
+{
+	u16_t answer = 0;
+	register i32_t sum = 0;
+	register u16_p w = addr;
+	register i32_t nleft = len;
+
+	if (NULL == addr) {
+		return -1;
+	}
+
+	while (nleft > 1) {
+		sum += *w++;
+		nleft -= 2;
+	}
+
+	if (nleft == 1) {
+		*(u8_p)(&answer) = *(u8_p)w ;
+		sum += answer;
+	}
+
+	return (sum);
+}
+
+
 u16_t tcp_chk_sum(u8_t proto, i8_p packet, u16_t length, u32_t src_ip, u32_t dst_ip)
 {
 	i32_t sum;
 	u16_t answer;
 	psuedo_hdr_t psd_hdr;
-	struct in_addr src_addr, dst_addr;
-
-	src_addr.s_addr = src_ip;
-	dst_addr.s_addr = dst_ip;
 
 	psd_hdr.protocol = proto;
 	psd_hdr.length = htons(length);
 	psd_hdr.place_holder = 0;
 
-	psd_hdr.src_addr = src_addr;
-	psd_hdr.dst_addr = dst_addr;
+	psd_hdr.src_addr.s_addr = src_ip;
+	psd_hdr.dst_addr.s_addr = dst_ip;
 
 	sum = chk_sum((u16_p)&psd_hdr, sizeof(psuedo_hdr_t));
 	sum += chk_sum((u16_p)packet, length);
