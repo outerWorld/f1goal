@@ -21,7 +21,7 @@ static i32_t _init_hex_array(u8_p hex_array, i16_t base, i8_p p_char_arr, i32_t 
 	return F1G_OK;
 }
 
-i32_t lang_code_init()
+i32_t lang_code_init(string_t gbk_unic_map)
 {
 	_init_hex_array(sg_hex_array, 0, &sg_hex_chars[0], 16);
 	_init_hex_array(sg_hex_array, 10, &sg_hex_chars[16], 6);
@@ -111,3 +111,55 @@ i32_t str_decode(i8_p p_str, i32_t str_len, u8_p p_buf, i32_p data_size, u8_p co
 
 	return F1G_OK;
 }
+
+
+i32_t gbk_to_utf8(u8_p p_gbk, i32_t gbk_len, u8_p p_utf8_buf, i32_p data_len)
+{
+	return F1G_OK;
+}
+
+i32_t utf8_to_unicode(u8_p p_utf8, i32_t utf8_len, u8_p p_unic_buf, i32_p data_len)
+{
+	return F1G_OK;
+}
+
+/*
+ * 		Unicode 			Utf8
+ * 000000 ~ 00007F		0xxxxxxx
+ * 000080 ~ 0007FF		110xxxxx 10xxxxxx
+ * 000800 ~ 00FFFF		1110xxxx 10xxxxxx 10xxxxxx
+ * 010000 ~ 10FFFF		11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+ */
+i32_t unicode_to_utf8(u16_p p_unic, i32_t unic_len, u8_p p_utf8_buf, i32_p data_len)
+{
+	u16_p p_cur = p_unic;
+	u16_p p_end = p_unic + unic_len;
+	u8_p p_utf8_cur = p_utf8_buf;
+	u32_t val = 0;
+	i32_t buf_size = *data_len;
+
+	memset(p_utf8_buf, 0x00, buf_size);
+	*data_len = 0;
+	while (p_cur < p_end) {
+		val = 0x00000000U;
+		val |= *p_cur;
+		if (*p_cur>=0x0000U && *p_cur<=0x007FU) {
+			*(p_utf8_cur++) = *((u8_p)&val + 0);
+			*data_len = 1;
+		} else if (*p_cur>=0x0080U && *p_cur<=0x07FFU) {
+			*(p_utf8_cur++) = val&0x3F | 0x80;
+			*(p_utf8_cur++) = (val>>6)&0x1F | 0x0C0;
+			*data_len = 2;
+		} else if (*p_cur>=0x0800U && *p_cur<=0xFFFFU) {
+			*(p_utf8_cur++) = val&0x3F | 0x80;
+			*(p_utf8_cur++) = (val>>6)&0x3F | 0x80;
+			*(p_utf8_cur++) = (val>>12)&0x1F | 0x0E0;
+			*data_len = 3;
+		} else {
+		}
+		p_cur++;
+	}
+
+	return F1G_OK;
+}
+

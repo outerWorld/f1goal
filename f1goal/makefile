@@ -15,7 +15,7 @@ F1goalLib_Objs=${ObjPath}/f1g_basic_funcs.o ${ObjPath}/f1g_string.o ${ObjPath}/f
 F1goalLib_S=libf1goal.a
 F1goalLib_D=libf1goal.so
 TOOL_LIB=${LibPath}/${F1goalLib_S} ${DepPath}/lib/libpcap.a
-TOOLS=pksender pksender_v1 pksender_v2 pkreceiver pkreceiver_v1 pkreceiver_v2 simple_server simple_client
+TOOLS=pksender pksender_v1 pksender_v2 pkreceiver pkreceiver_v1 pkreceiver_v2 simple_server simple_client lang_conv
 
 ${BinPath}/pksender:${ObjPath}/pksender.o ${TOOL_LIB}
 	${CC} -o $@ $^ -L/usr/lib -lpthread
@@ -33,6 +33,8 @@ ${BinPath}/simple_server:${ObjPath}/simple_server.o ${TOOL_LIB}
 	${CC} -o $@ $^ -L/usr/lib -lpthread
 ${BinPath}/simple_client:${ObjPath}/simple_client.o ${TOOL_LIB}
 	${CC} -o $@ $^ -L/usr/lib -lpthread
+${BinPath}/lang_conv:${ObjPath}/lang_conv.o ${TOOL_LIB}
+	${CC} -o $@ $^ -L/usr/lib -lpthread
 
 ${LibPath}/${F1goalLib_S}:${F1goalLib_Objs}
 	ar rcs $@ $^
@@ -43,6 +45,10 @@ ${LibPath}/${F1goalLib_D}:${F1goalLib_Objs}
 ${ObjPath}/pksender.o:${ToolPath}/pksender.c
 	${CC} ${CFlag} -c $< -I./include -I${DepPath}/include -I./tools
 	mv pksender.o ${ObjPath}
+
+${ObjPath}/lang_conv.o:${ToolPath}/lang_conv.c
+	${CC} ${CFlag} -c $< -I./include -I${DepPath}/include -I./tools
+	mv lang_conv.o ${ObjPath}
 
 ${ObjPath}/pksender_v1.o:${ToolPath}/pksender_v1.c
 	${CC} ${CFlag} -c $< -I./include -I${DepPath}/include -I./tools
@@ -127,7 +133,7 @@ ${ObjPath}/f1g_lang_code.o:${SrcPath}/f1g_lang_code.c
 
 .PHONY:all clean_obj clean_all rel_all rel_tool
 
-all:libs  pksender pksender_v1 pksender_v2 pkreceiver pkreceiver_v1 pkreceiver_v2 simple_client simple_server
+all:libs  pksender pksender_v1 pksender_v2 pkreceiver pkreceiver_v1 pkreceiver_v2 simple_client simple_server lang_conv
 
 pksender:${BinPath}/pksender
 pksender_v1:${BinPath}/pksender_v1
@@ -137,6 +143,7 @@ pkreceiver_v1:${BinPath}/pkreceiver_v1
 pkreceiver_v2:${BinPath}/pkreceiver_v2
 simple_client:${BinPath}/simple_client
 simple_server:${BinPath}/simple_server
+lang_conv:${BinPath}/lang_conv
 
 #libs:${LibPath}/${F1goalLib_S} ${LibPath}/${F1goalLib_D}
 libs:${LibPath}/${F1goalLib_S}

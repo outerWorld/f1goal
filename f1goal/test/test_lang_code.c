@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	lang_code_init();
+	lang_code_init("");
 	
 	data_len = 1024;
 	ret = str_decode(argv[1], strlen(argv[1]), buf, &data_len, &code_type);
@@ -28,6 +28,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	hex_print(stdout, buf, data_len);
+	
 
 	return 0;
 }
