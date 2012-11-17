@@ -118,8 +118,27 @@ i32_t gbk_to_utf8(u8_p p_gbk, i32_t gbk_len, u8_p p_utf8_buf, i32_p data_len)
 	return F1G_OK;
 }
 
-i32_t utf8_to_unicode(u8_p p_utf8, i32_t utf8_len, u8_p p_unic_buf, i32_p data_len)
+i32_t utf8_to_unicode(u8_p p_utf8, i32_t utf8_len, u16_p p_unic_buf, i32_p data_len)
 {
+	u8_p p_cur = p_utf8;
+	u8_p p_end = p_utf8 + utf8_len;
+	u16_t ucs = 0;
+	i32_t data_size = *data_len;
+
+	memset(p_unic_buf, 0x00, data_size);
+	*data_len = 0;
+	while (p_cur < p_end) {
+		if (*p_cur&0x80 == 0x00) {
+			ucs = *p_cur;
+		} else if (*p_cur&0xE0 == 0xC0) {
+		} else if (*p_cur&0xF0 == 0xE0) {
+		} else if (*p_cur&0xF8 == 0xF0) {
+		} else if (*p_cur&0xFC == 0xF8) {
+		} else if (*p_cur&0xFE == 0xFC) {
+		} else {
+		}
+	}
+
 	return F1G_OK;
 }
 
