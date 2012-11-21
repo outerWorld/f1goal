@@ -21,6 +21,16 @@ static i32_t _init_hex_array(u8_p hex_array, i16_t base, i8_p p_char_arr, i32_t 
 	return F1G_OK;
 }
 
+lc_map_p lc_map_create(string_t lc_name)
+{
+	lc_map_p p_m = NULL;
+	
+	p_m = (lc_map_p)malloc(sizeof(lc_map_t));
+	if (NULL == p_m) {
+		return NULL;
+	}
+}
+
 i32_t lang_code_init(string_t gbk_unic_map)
 {
 	_init_hex_array(sg_hex_array, 0, &sg_hex_chars[0], 16);
@@ -172,7 +182,7 @@ i32_t utf8_to_unicode(u8_p p_utf8, i32_t utf8_len, u16_p p_unic_buf, i32_p data_
 			return F1G_ERR;
 		}
 
-		p_utf8_buf[*data_len] = ucs;
+		p_unic_buf[*data_len] = ucs;
 		(*data_len)++;
 		ucs = 0;
 	}
