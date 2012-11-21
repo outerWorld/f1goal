@@ -120,23 +120,61 @@ i32_t gbk_to_utf8(u8_p p_gbk, i32_t gbk_len, u8_p p_utf8_buf, i32_p data_len)
 
 i32_t utf8_to_unicode(u8_p p_utf8, i32_t utf8_len, u16_p p_unic_buf, i32_p data_len)
 {
+	i32_t num = 0;
+	u32_t ucs = 0;
 	u8_p p_cur = p_utf8;
 	u8_p p_end = p_utf8 + utf8_len;
-	u16_t ucs = 0;
 	i32_t data_size = *data_len;
 
 	memset(p_unic_buf, 0x00, data_size);
 	*data_len = 0;
-	while (p_cur < p_end) {
+	while (*data_len<data_size && p_cur<p_end) {
 		if (*p_cur&0x80 == 0x00) {
-			ucs = *p_cur;
+			num = 1;
+			if (p_cur+num-1 >= p_end) { return F1G_ERR; }
+			ucs |= *p_cur++;
 		} else if (*p_cur&0xE0 == 0xC0) {
+			num = 2;
+			if (p_cur+num-1 >= p_end) { return F1G_ERR; }
+			ucs |= ((u32_t)(*p_cur++ & 0x1F))<<6;
+			ucs |= ((u32_t)(*p_cur++ & 0x3F));
 		} else if (*p_cur&0xF0 == 0xE0) {
+			num = 3;
+			if (p_cur+num-1 >= p_end) { return F1G_ERR; }
+			ucs |= ((u32_t)(*p_cur++ & 0x0F))<<12;
+			ucs |= ((u32_t)(*p_cur++ & 0x3F))<<6;
+			ucs |= ((u32_t)(*p_cur++ & 0x3F));
 		} else if (*p_cur&0xF8 == 0xF0) {
+			num = 4;
+			if (p_cur+num-1 >= p_end) { return F1G_ERR; }
+			ucs |= ((u32_t)(*p_cur++ & 0x07))<<18;
+			ucs |= ((u32_t)(*p_cur++ & 0x3F))<<12;
+			ucs |= ((u32_t)(*p_cur++ & 0x3F))<<6;
+			ucs |= ((u32_t)(*p_cur++ & 0x3F));
 		} else if (*p_cur&0xFC == 0xF8) {
+			num = 5;
+			if (p_cur+num-1 >= p_end) { return F1G_ERR; }
+			ucs |= ((u32_t)(*p_cur++ & 0x03))<<24;
+			ucs |= ((u32_t)(*p_cur++ & 0x3F))<<18;
+			ucs |= ((u32_t)(*p_cur++ & 0x3F))<<12;
+			ucs |= ((u32_t)(*p_cur++ & 0x3F))<<6;
+			ucs |= ((u32_t)(*p_cur++ & 0x3F));
 		} else if (*p_cur&0xFE == 0xFC) {
+			num = 6;
+			if (p_cur+num-1 >= p_end) { return F1G_ERR; }
+			ucs |= ((u32_t)(*p_cur++ & 0x01))<<30;
+			ucs |= ((u32_t)(*p_cur++ & 0x07))<<24;
+			ucs |= ((u32_t)(*p_cur++ & 0x3F))<<18;
+			ucs |= ((u32_t)(*p_cur++ & 0x3F))<<12;
+			ucs |= ((u32_t)(*p_cur++ & 0x3F))<<6;
+			ucs |= ((u32_t)(*p_cur++ & 0x3F));
 		} else {
+			return F1G_ERR;
 		}
+
+		p_utf8_buf[*data_len] = ucs;
+		(*data_len)++;
+		ucs = 0;
 	}
 
 	return F1G_OK;
@@ -175,6 +213,7 @@ i32_t unicode_to_utf8(u16_p p_unic, i32_t unic_len, u8_p p_utf8_buf, i32_p data_
 			*(p_utf8_cur++) = (val>>12)&0x1F | 0x0E0;
 			*data_len = 3;
 		} else {
+			return F1G_ERR;
 		}
 		p_cur++;
 	}
