@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
         strcat(filter, " ");
     }
 	
-	if (eth_scrapy_init(argv[2], filter) < 0) {
+	if (eth_scrapy_init(argv[2], filter, SCRAPY_CARD) < 0) {
 		fprintf(stderr, "%s,%d eth_scrapy_init fail!\n", __FUNCTION__, __LINE__);
 		return 1;
 	}	

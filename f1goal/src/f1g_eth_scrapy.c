@@ -14,23 +14,33 @@ static int run_flag = 0;
 static pcap_t * sg_scraper = NULL;
 pcap_handler sg_handler = 0;
 
-int eth_scrapy_init(char *eth, char *filter)
+int eth_scrapy_init(char *eth, char *filter, int type)
 {
 	int ret;
 	struct bpf_program fp;
-	bpf_u_int32 mask;
+	bpf_u_int32 mask = 0x00;
 	bpf_u_int32 net;
 	char errbuf[128];
 
-	ret = pcap_lookupnet(eth, &net, &mask, errbuf);
-	if (-1 == ret) {
-		fprintf(stderr, "[%s,%d] pcap_lookupnet fail[%s]!\n", __FUNCTION__, __LINE__, errbuf);
-		return -1;
-	}
-
-	sg_scraper = pcap_open_live(eth, 65535, 0, 10, errbuf);
-	if (NULL == sg_scraper) {
-		fprintf(stderr, "open device [%s] fail!\n", eth);
+	if (SCRAPY_CARD == type) {
+		ret = pcap_lookupnet(eth, &net, &mask, errbuf);
+		if (-1 == ret) {
+			fprintf(stderr, "[%s,%d] pcap_lookupnet fail[%s]!\n", __FUNCTION__, __LINE__, errbuf);
+			return -1;
+		}
+		
+		sg_scraper = pcap_open_live(eth, 65535, 0, 10, errbuf);
+		if (NULL == sg_scraper) {
+			fprintf(stderr, "open device [%s] fail!\n", eth);
+			return -1;
+		}
+	} else if (SCRAPY_FILE == type) {
+		sg_scraper = pcap_open_offline(eth, errbuf);
+		if (NULL == sg_scraper) {
+			fprintf(stderr, "open device [%s] fail!\n", eth);
+			return -1;
+		}
+	} else {
 		return -1;
 	}
 	
@@ -59,7 +69,7 @@ int eth_scrapy_init(char *eth, char *filter)
 	}
 	
 	pcap_freecode(&fp);
-	run_flag = 1;
+	run_flag = SCRAPY_INIT;
 
 	return 0;
 }
@@ -75,6 +85,7 @@ static void * eth_scrapy_callback(void *arg)
 {
 	int ret;
 
+	run_flag = SCRAPY_RUNNING;
 	while (1 == run_flag) {
 		ret = pcap_dispatch(sg_scraper, 0, sg_handler, NULL);
 		if (-1 == ret) {
@@ -84,7 +95,7 @@ static void * eth_scrapy_callback(void *arg)
 	}
 
 	fprintf(stderr, "[%s,%d] eth scraper exit!\n", __FUNCTION__, __LINE__);
-	run_flag = 0;
+	run_flag = SCRAPY_OFF;
 	return NULL;
 }
 
@@ -106,12 +117,12 @@ int eth_scrapy_control(int code)
 	static const int wait_time = 1000;
 	switch(code) {
 		case ETH_SCRAPY_STOP:
-			run_flag = 0;
+			run_flag = SCRAPY_OFF;
 			fprintf(stdout, "[%s,%d] please wait %d useconds to exit!\n", __FUNCTION__, __LINE__, wait_time); 
 			usleep(wait_time);
 			break;
 		case ETH_SCRAPY_START:
-			run_flag = 1;
+			run_flag = SCRAPY_RUNNING;
 			break;
 		case ETH_SCRAPY_STATUS:
 			return run_flag;
