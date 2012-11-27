@@ -12,17 +12,30 @@ enum {
 	LANG_CODE_UNKNOWN
 };
 
+#define GBK_MAP_SIZE	0x0FFFF
+#define UCS_MAP_SIZE  	0x0FFFF
+#define UTF8_MAP_SIZE	0x0FFFFFF
 //language code map
+typedef union _code_union_s {
+	u8_t gbk[2];
+	u8_t unicode[2];	
+	u8_t utf8[3];
+}code_union_t, *code_union_p;
+typedef struct _code_map_s {
+	code_union_t cd1;
+	code_union_t cd2;
+}code_map_t, *code_map_p;
+
 typedef struct _lc_map_s {
-	u16_t	code_size;
-	u16_t	*gbk;
-	u16_t	*ucs;
-	u16_t	*utf8;
+	code_map_p	gbk;  // cd1(unicode), cd2(utf8)
+	code_map_p	ucs;  // cd1(utf8), cd2(gbk)
+	code_map_p	utf8; // cd1(unicode), cd2(gbk)
 }lc_map_t, *lc_map_p;
 
 #define URL_ESC_CHAR '%'
 
-lc_map_p lc_map_create(string_t lc_name);
+lc_map_p lc_map_create();
+i32_t lc_map_init(lc_map_p p_lc_map, string_t lc_name);
 
 i32_t lang_code_init(string_t gbk_unic_map);
 

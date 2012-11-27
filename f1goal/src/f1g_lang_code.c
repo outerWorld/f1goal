@@ -3,6 +3,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "f1g_lang_code.h"
 
 #define ASC_CODE_SIZE	256
@@ -21,7 +25,19 @@ static i32_t _init_hex_array(u8_p hex_array, i16_t base, i8_p p_char_arr, i32_t 
 	return F1G_OK;
 }
 
-lc_map_p lc_map_create(string_t lc_name)
+static code_map_p code_map_create(u32_t size)
+{
+	code_map_p p_obj = NULL;
+
+	p_obj = (code_map_p)malloc(sizeof(code_map_t)*size);
+	if (NULL != p_obj) {
+		memset(p_obj, 0x00, sizeof(code_map_t)*size);
+	}
+
+	return p_obj;
+}
+
+lc_map_p lc_map_create()
 {
 	lc_map_p p_m = NULL;
 	
@@ -29,6 +45,28 @@ lc_map_p lc_map_create(string_t lc_name)
 	if (NULL == p_m) {
 		return NULL;
 	}
+	memset(p_m, 0x00, sizeof(lc_map_t));
+
+	if ((p_m->gbk=code_map_create(GBK_MAP_SIZE)) == NULL) {
+		return NULL;
+	}
+
+	if ((p_m->ucs=code_map_create(UCS_MAP_SIZE)) == NULL) {
+		return NULL;
+	}
+
+	if ((p_m->utf8=code_map_create(UTF8_MAP_SIZE)) == NULL) {
+		return NULL;
+	}
+
+	return p_m;
+}
+
+i32_t lc_map_init(lc_map_p p_lc_map, string_t lc_name)
+{
+	i32_t fd;
+
+	return F1G_OK;
 }
 
 i32_t lang_code_init(string_t gbk_unic_map)
