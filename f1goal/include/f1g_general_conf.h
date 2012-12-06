@@ -6,8 +6,8 @@
  * Date  : 2012-11-27
  */
 
-#ifndef __F1G_COMM_CONF_H
-#define __F1G_COMM_CONF_H
+#ifndef __F1G_SMART_CONF_H
+#define __F1G_SMART_CONF_H
 
 #include "f1g_basic_types.h"
 
@@ -25,9 +25,10 @@ enum {
 	CFT_LINE,
 };
 
-typedef struct _comm_conf_s {
-}comm_conf_t, *comm_conf_p;
+typedef struct _smart_conf_s {
+}smart_conf_t, *_smart_conf_p;
 
-i32_t comm_conf_read(string_t conf_file);
+i32_t smart_conf_read(smart_conf_p p_conf, string_t conf_file, i32_t conf_type);
+i32_t smart_conf_destroy(smart_conf_p p_conf);
 
-#endif // __F1G_COMM_CONF_H
+#endif // __F1G_SMART_CONF_H
