@@ -25,7 +25,6 @@ enum {
 int eth_scrapy_init(char *eth, char *filter, int type);
 int eth_scrapy_reg(pcap_handler handler);
 int eth_scrapy_start();
-int eth_scrapy_status();
 int eth_scrapy_control(int code);
 int eth_scrapy_destroy();
 
