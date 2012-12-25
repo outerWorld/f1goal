@@ -45,7 +45,7 @@ typedef struct _smart_conf_s {
 	i32_t	sec_num;
 	i32_t	sec_size;
 	sec_p	p_secs;
-}smart_conf_t, *_smart_conf_p;
+}smart_conf_t, *smart_conf_p;
 
 i32_t smart_conf_init(smart_conf_p p_conf, i32_t sec_size, i32_t item_size);
 
