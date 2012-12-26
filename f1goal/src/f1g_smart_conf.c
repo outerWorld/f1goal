@@ -46,6 +46,10 @@ static i32_t extend_sec_size(smart_conf_p p_conf, int ext_sec_size)
 {
 	sec_p p_sec = p_conf->p_secs;
 
+	if (ext_sec_size <= p_conf->sec_size) {
+		ext_sec_size = (p_conf->sec_size + 1) * 2; // make sure it will not be zero as sec_size may be 0
+	}
+
 	p_conf->p_secs = (sec_p)malloc(sizeof(sec_t)*ext_sec_size);
 	if (!p_conf->p_secs) { return F1G_ERR; }
 	memset(p_conf->p_secs, 0x00, sizeof(sec_t)*ext_sec_size);
@@ -62,6 +66,10 @@ static i32_t extend_sec_size(smart_conf_p p_conf, int ext_sec_size)
 static i32_t extend_item_size(sec_p p_sec, int ext_item_size)
 {
 	item_p p_item = p_sec->p_items;
+	
+	if (ext_item_size <= p_sec->item_size) {
+		ext_item_size = (p_sec->item_size + 1) * 2; // make sure it will not be zero as item_size may be 0
+	}
 
 	p_sec->p_items = (item_p)malloc(sizeof(item_t)*ext_item_size);
 	if (!p_sec->p_items) { return F1G_ERR; }
