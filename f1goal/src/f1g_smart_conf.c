@@ -269,6 +269,23 @@ i32_t smart_conf_get_u32(smart_conf_p p_conf, string_t sec, string_t item_name,
 	return F1G_OK;
 }
 
+i32_t smart_conf_get_x32(smart_conf_p p_conf, string_t sec, string_t item_name,
+												 u32_t dft_val, u32_p u32_val)
+{
+	item_p p_item;
+	i8_p p_end = NULL;
+
+	p_item = find_item(p_conf, sec, item_name);
+	if (!p_item || 0 == strlen(p_item->val)) {
+		*u32_val = dft_val;
+	} else {
+		*u32_val = strtoul(p_item->val, &p_end, 16);
+		if ('\0' != *p_end) { return F1G_ERR; }
+	}
+		
+	return F1G_OK;
+}
+
 i32_t smart_conf_get_i32(smart_conf_p p_conf, string_t sec, string_t item_name,
 												 i32_t dft_val, i32_p i32_val)
 {
@@ -315,6 +332,23 @@ i32_t smart_conf_get_u64(smart_conf_p p_conf, string_t sec, string_t item_name,
 		*u64_val = dft_val;
 	} else {
 		*u64_val = strtoull(p_item->val, &p_end, 10);
+		if ('\0' != *p_end) { return F1G_ERR; }
+	}
+
+	return F1G_OK;
+}
+
+i32_t smart_conf_get_x64(smart_conf_p p_conf, string_t sec, string_t item_name,
+												 u64_t dft_val, u64_p u64_val)
+{
+	item_p p_item;
+	i8_p p_end = NULL;
+
+	p_item = find_item(p_conf, sec, item_name);
+	if (!p_item || 0 == strlen(p_item->val)) {
+		*u64_val = dft_val;
+	} else {
+		*u64_val = strtoull(p_item->val, &p_end, 16);
 		if ('\0' != *p_end) { return F1G_ERR; }
 	}
 

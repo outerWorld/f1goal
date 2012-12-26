@@ -2,7 +2,7 @@ vpath include tools src
 CC=gcc
 RelPath=rel_packet
 ToolRelPath=toolrel_packet
-CFlag=-g
+CFlag=-g -Werror
 InstPath=/usr/bin/
 SrcPath=./src
 BinPath=./bin
@@ -11,7 +11,7 @@ DepPath=./dep
 ObjPath=./objs
 IncPath=-I./include -I./tools
 ToolPath=./tools
-F1goalLib_Objs=${ObjPath}/f1g_basic_funcs.o ${ObjPath}/f1g_string.o ${ObjPath}/f1g_log.o ${ObjPath}/f1g_cmd_line.o ${ObjPath}/f1g_data_op.o ${ObjPath}/f1g_eth_scrapy.o ${ObjPath}/f1g_bit_array.o ${ObjPath}/f1g_http.o ${ObjPath}/f1g_http_parser.o ${ObjPath}/f1g_template.o ${ObjPath}/f1g_data_set.o ${ObjPath}/f1g_net_forge.o ${ObjPath}/f1g_lang_code.o ${ObjPath}/f1g_smart_conf.o
+F1goalLib_Objs=${ObjPath}/f1g_basic_funcs.o ${ObjPath}/f1g_string.o ${ObjPath}/f1g_log.o ${ObjPath}/f1g_cmd_line.o ${ObjPath}/f1g_data_op.o ${ObjPath}/f1g_eth_scrapy.o ${ObjPath}/f1g_bit_array.o ${ObjPath}/f1g_http.o ${ObjPath}/f1g_http_parser.o ${ObjPath}/f1g_template.o ${ObjPath}/f1g_data_set.o ${ObjPath}/f1g_net_forge.o ${ObjPath}/f1g_lang_code.o ${ObjPath}/f1g_server.o ${ObjPath}/f1g_smart_conf.o ${ObjPath}/f1g_queue.o
 F1goalLib_S=libf1goal.a
 F1goalLib_D=libf1goal.so
 TOOL_LIB=${LibPath}/${F1goalLib_S} ${DepPath}/lib/libpcap.a
@@ -134,6 +134,14 @@ ${ObjPath}/f1g_lang_code.o:${SrcPath}/f1g_lang_code.c
 ${ObjPath}/f1g_smart_conf.o:${SrcPath}/f1g_smart_conf.c
 	${CC} ${CFlag} -c $< -I./include
 	mv f1g_smart_conf.o ${ObjPath}
+
+${ObjPath}/f1g_server.o:${SrcPath}/f1g_server.c
+	${CC} ${CFlag} -c $< -I./include
+	mv f1g_server.o ${ObjPath}
+
+${ObjPath}/f1g_queue.o:${SrcPath}/f1g_queue.c
+	${CC} ${CFlag} -c $< -I./include
+	mv f1g_queue.o ${ObjPath}
 
 .PHONY:all clean_obj clean_all rel_all rel_tool
 

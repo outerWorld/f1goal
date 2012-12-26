@@ -3,14 +3,62 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "f1g_general_conf.h"
+#include "f1g_smart_conf.h"
 #include "f1g_server.h"
 
-int serv_load(char *fpath, server_conf_p p_conf)
+// 
+#define SERV_SYS_CFG "serv.ini"
+
+i32_t serv_load(char *fpath, server_conf_p p_conf)
 {
+	smart_conf_t cfg_eng;
+
+	memset(p_conf, 0x00, sizeof(server_conf_t));
+	if (F1G_OK != smart_conf_init(&cfg_eng, 4, 20)) {
+		return F1G_ERR;
+	}
+
+	if (F1G_OK != smart_conf_read(&cfg_eng, fpath, CFT_INI)) {
+		smart_conf_destroy(&cfg_eng);
+		return F1G_ERR;
+	}
+	
+	smart_conf_dbg(&cfg_eng);
+	
+	if (F1G_OK != smart_conf_get_i32(&cfg_eng, "sys", "work_mode", WK_MODE_MT, &p_conf->work_mode)) {
+		return F1G_ERR;
+	}
+
+	if (F1G_OK != smart_conf_get_i32(&cfg_eng, "sys", "worker_num", 1, &p_conf->worker_num)) {
+		return F1G_ERR;
+	}
+
+	if (F1G_OK != smart_conf_get_i32(&cfg_eng, "sys", "que_mode", 1, &p_conf->que_mode)) {
+		return F1G_ERR;
+	}
+
+	if (F1G_OK != smart_conf_get_i32(&cfg_eng, "sys", "que_size", 1, &p_conf->que_size)) {
+		return F1G_ERR;
+	}
+
+	if (F1G_OK != smart_conf_get_x32(&cfg_eng, "sys", "serv_type", SERV_TYPE_STCP, &p_conf->serv_type)) {
+		return F1G_ERR;
+	}
+
+	if (F1G_OK != smart_conf_get_str(&cfg_eng, "sys", "serv_win", "", p_conf->serv_win, SERV_WIN_DESC_SIZE)) {
+		return F1G_ERR;
+	}
+
+	if (F1G_OK != smart_conf_get_i32(&cfg_eng, "sys", "access_mode", ACCESS_SELECT, &p_conf->serv_type)) {
+		return F1G_ERR;
+	}
+
+	smart_conf_destroy(&cfg_eng);
+
+	return F1G_OK;
 }
 
-serv_object_p serv_create(serer_conf_p p_conf)
+serv_object_p serv_create(server_conf_p p_conf)
 {
 	serv_object_p p_obj;
 

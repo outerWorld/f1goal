@@ -4,6 +4,29 @@
 
 #define SERV_WIN_DESC_SIZE	256
 
+enum {
+	WK_MODE_MT = 0x00, // multi-thread
+	WK_MODE_MP, // multi-process
+};
+
+enum {
+	Q_MODE_S = 0x00, //single-queue
+	Q_MODE_M, //multi-queue
+};
+
+enum {
+	SERV_TYPE_LTCP = 0x10, // long connection of tcp	
+	SERV_TYPE_STCP = 0x11, // short connection of tcp
+	SERV_TYPE_UDP = 0x20,  // udp 
+	SERV_TYPE_PCAP = 0x30, // pcap
+};
+
+enum {
+	ACCESS_SELECT = 0x00,
+	ACCESS_POLL,
+	ACCESS_EPOLL
+};
+
 typedef struct _server_conf_s {
 	// working mode: multi-thread(0) or multi-process(1)
 	int 	work_mode;

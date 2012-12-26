@@ -55,6 +55,8 @@ i32_t smart_conf_dbg(smart_conf_p p_conf);
 
 i32_t smart_conf_get_u32(smart_conf_p p_conf, string_t sec, string_t item_name,
 												 u32_t dft_val, u32_p u32_val);
+i32_t smart_conf_get_x32(smart_conf_p p_conf, string_t sec, string_t item_name,
+												 u32_t dft_val, u32_p u32_val);
 
 i32_t smart_conf_get_i32(smart_conf_p p_conf, string_t sec, string_t item_name,
 												 i32_t dft_val, i32_p i32_val);
@@ -63,6 +65,9 @@ i32_t smart_conf_get_i64(smart_conf_p p_conf, string_t sec, string_t item_name,
 												 i64_t dft_val, i64_p i64_val);
 
 i32_t smart_conf_get_u64(smart_conf_p p_conf, string_t sec, string_t item_name,
+												 u64_t dft_val, u64_p u64_val);
+
+i32_t smart_conf_get_x64(smart_conf_p p_conf, string_t sec, string_t item_name,
 												 u64_t dft_val, u64_p u64_val);
 
 i32_t smart_conf_get_str(smart_conf_p p_conf, string_t sec, string_t item_name,
