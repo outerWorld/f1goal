@@ -1,5 +1,5 @@
 CC=gcc
-TESTS=test_http test_template test_lang_code
+TESTS=test_http test_template test_lang_code test_smart_conf
 LIB=../lib/libf1goal.a
 C_FLAG=-g
 
@@ -10,6 +10,8 @@ test_template:test_template.o ${LIB}
 	${CC} ${C_FLAG} -o $@ $^
 
 test_lang_code:test_lang_code.o ${LIB}
+	${CC} ${C_FLAG} -o $@ $^
+test_smart_conf:test_smart_conf.o ${LIB}
 	${CC} ${C_FLAG} -o $@ $^
 
 %.o: %.c

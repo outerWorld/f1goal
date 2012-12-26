@@ -51,6 +51,8 @@ i32_t smart_conf_init(smart_conf_p p_conf, i32_t sec_size, i32_t item_size);
 
 i32_t smart_conf_read(smart_conf_p p_conf, string_t conf_file, i32_t conf_type);
 
+i32_t smart_conf_dbg(smart_conf_p p_conf);
+
 i32_t smart_conf_get_u32(smart_conf_p p_conf, string_t sec, string_t item_name,
 												 u32_t dft_val, u32_p u32_val);
 
