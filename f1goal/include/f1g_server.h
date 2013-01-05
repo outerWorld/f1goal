@@ -8,7 +8,7 @@
 
 struct worker_t;
 typedef struct worker_t * worker_p;
-typedef queue_object_p queue_p;
+typedef que_obj_p queue_p;
 
 typedef i32_t (*access_func_p)();
 typedef i32_t (*worker_func_p)(worker_p worker);
