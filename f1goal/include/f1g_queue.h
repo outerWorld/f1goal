@@ -23,6 +23,7 @@ typedef struct _que_obj_s {
 	i8_p		buffer;
 }que_obj_t, *que_obj_p;
 
+
 i8_t que_obj_init(que_obj_p p_que, i32_t blk_size, i32_t blk_num);
 
 que_obj_p que_obj_create(i32_t blk_size, i32_t blk_num);
@@ -32,6 +33,7 @@ i32_t que_obj_blk_size(que_obj_p p_obj);
 i32_t que_obj_blk_num(que_obj_p p_obj);
 
 i8_t que_obj_empty(que_obj_p p_obj);
+i8_t que_obj_full(que_obj_p p_obj);
 
 i8_t que_obj_pop(que_obj_p p_obj);
 

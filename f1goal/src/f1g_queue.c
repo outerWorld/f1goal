@@ -20,7 +20,7 @@ i8_t que_obj_init(que_obj_p p_que, i32_t blk_size, i32_t blk_num)
 	
 	p_que->blk_size = blk_size + sizeof(elem_t);
 	p_que->blk_num = blk_num;
-	p_que->tail = p_que->front = -1;
+	p_que->tail = p_que->front = 0;
 
 	return F1G_OK;
 }
@@ -38,7 +38,7 @@ que_obj_p que_obj_create(i32_t blk_size, i32_t blk_num)
 		return NULL;
 	}
 	
-	return F1G_OK;
+	return p_obj;
 }
 
 i32_t que_obj_blk_size(que_obj_p p_obj)
@@ -56,10 +56,20 @@ i8_t que_obj_empty(que_obj_p p_obj)
 	return (p_obj->front==p_obj->tail)?1:0;
 }
 
+i8_t que_obj_full(que_obj_p p_obj)
+{
+	return (p_obj->front==((p_obj->tail+1)%p_obj->blk_num))?1:0;
+}
+
 i8_t que_obj_pop(que_obj_p p_obj)
 {
+	elem_p p_elem = NULL;
+
 	if (p_obj->front != p_obj->tail) {
 		// not empty
+		p_elem = (elem_p)BLK_ADDR(p_obj->front, p_obj);		
+		p_elem->data_len = 0;
+		p_elem->status = 0x00;
 		p_obj->front = (p_obj->front+1)%(p_obj->blk_num);
 	}
 
