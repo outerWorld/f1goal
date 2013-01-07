@@ -40,7 +40,7 @@ ${LibPath}/${F1goalLib_S}:${F1goalLib_Objs}
 	ar rcs $@ $^
 
 ${LibPath}/${F1goalLib_D}:${F1goalLib_Objs}
-	${CC} -shared -o $@ $^
+	${CC} -shared -o $@ $^ -lpthread
 
 ${ObjPath}/pksender.o:${ToolPath}/pksender.c
 	${CC} ${CFlag} -c $< -I./include -I${DepPath}/include -I./tools
@@ -143,9 +143,11 @@ ${ObjPath}/f1g_queue.o:${SrcPath}/f1g_queue.c
 	${CC} ${CFlag} -c $< -I./include
 	mv f1g_queue.o ${ObjPath}
 
+tests:
+	cd test && sh build_tests.sh && cd ..
 .PHONY:all clean_obj clean_all rel_all rel_tool
 
-all:libs  pksender pksender_v1 pksender_v2 pkreceiver pkreceiver_v1 pkreceiver_v2 simple_client simple_server lang_conv
+all:libs  pksender pksender_v1 pksender_v2 pkreceiver pkreceiver_v1 pkreceiver_v2 simple_client simple_server lang_conv tests
 
 pksender:${BinPath}/pksender
 pksender_v1:${BinPath}/pksender_v1

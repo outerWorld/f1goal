@@ -14,7 +14,7 @@ test_lang_code:test_lang_code.o ${LIB}
 test_smart_conf:test_smart_conf.o ${LIB}
 	${CC} ${C_FLAG} -o $@ $^
 test_server:test_server.o ${LIB}
-	${CC} ${C_FLAG} -o $@ $^
+	${CC} ${C_FLAG} -o $@ $^ -lpthread
 
 test_queue:test_queue.o ${LIB}
 	${CC} ${C_FLAG} -o $@ $^ -lpthread

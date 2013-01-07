@@ -23,6 +23,9 @@ typedef struct _que_obj_s {
 	i8_p		buffer;
 }que_obj_t, *que_obj_p;
 
+#define BLK_DATA(buffer) (buffer + sizeof(elem_t))
+
+#define BLK_DATA_SIZE(buffer) (((elem_p)(buffer))->data_len)
 
 i8_t que_obj_init(que_obj_p p_que, i32_t blk_size, i32_t blk_num);
 
@@ -44,6 +47,8 @@ i8_p que_obj_head(que_obj_p p_obj);
 i8_p que_obj_tail(que_obj_p p_obj);
 
 i8_t que_obj_destroy(que_obj_p p_obj);
+
+i32_t que_obj_stat(que_obj_p p_obj);
 
 #ifdef __cplusplus
 }

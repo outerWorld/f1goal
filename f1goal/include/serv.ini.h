@@ -7,6 +7,7 @@ worker_num = 2
 que_mode = 1
 # element size of queue
 que_size = 512
+que_cap = 1024
 # tcp:Long-connect(0x10), Short-connect(0x11);udp(0x20), pcap(0x30)
 serv_type = 0x10
 # 

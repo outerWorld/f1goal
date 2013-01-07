@@ -36,6 +36,8 @@ typedef struct _server_conf_s {
 	int 	que_mode;
 	// queue size: element size of queue
 	int		que_size;
+	// queue capacity:
+	int		que_cap;
 	// service type:tcp long connection (0x10) or tcp short connection(0x11), or udp(0x20), or pcap(0x30)
 	int 	serv_type;
 	// service window: ip:port for tcp or udp, netdevice and filter condition for pcap.

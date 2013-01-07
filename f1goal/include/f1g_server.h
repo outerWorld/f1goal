@@ -3,38 +3,50 @@
 #define __F1G_SERVER_H
 
 #include "f1g_basic_types.h"
+#include "f1g_buffer.h"
 #include "f1g_queue.h"
 #include "f1g_server_conf.h"
 
-struct worker_t;
-typedef struct worker_t * worker_p;
+struct worker_s;
+typedef struct worker_s * worker_p;
 typedef que_obj_p queue_p;
+typedef pthread_t worker_id_t;
+typedef pthread_t accessor_id_t;
+typedef void * context_t;
 
-typedef i32_t (*access_func_p)();
-typedef i32_t (*worker_func_p)(worker_p worker);
-typedef i32_t (*context_clean_func_p)();
+typedef void * (*access_func_p)(void *arg);
+// callback function of thread
+typedef void * (*worker_func_p)(void *arg);
+// callback function of data process
+typedef i32_t (*worker_data_fproc_p)(context_t ctx, void *user_data, i32_t data_len);
+typedef i32_t (*context_clean_func_p)(context_t ctx);
 
-typedef struct context_s {
-	i32_t i;
-}context_t, *context_p;
-
-struct worker_t {
-	i32_t					worker_id; //here is the thread or process id
-	worker_func_p 			pf_worker;
-	context_p 				p_ctx;
+typedef struct worker_s {
+	worker_id_t				id; //here is the thread or process id
+	worker_func_p 			p_worker_f;
+	worker_data_fproc_p		p_proc_f;
+	context_t 				p_ctx;
 	context_clean_func_p 	p_ctx_clean_f;	
-};//worker_t, *worker_p;
+	que_obj_p				p_que;
+}worker_t, *worker_p;
+
+typedef struct _access_context_s {
+	i32_t					accessor;	//socket fd for tcp/udp;
+	buffer_t				rd_buf;
+	buffer_t				wr_buf;
+}access_context_t, *access_context_p;
 
 typedef struct _access_s {
-	access_func_p 			pf_access;
-	context_p				p_ctx;
+	accessor_id_t			id;
+	access_func_p 			p_access_f;
+	context_t				p_ctx;
 	context_clean_func_p 	p_ctx_clean_f;
 	i32_t					que_num;
-	queue_p					p_ques;
+	queue_p	*				p_ques;
 }access_t, *access_p;
 
 typedef struct _serv_object_s {
-	i32_t 			workers_num;
+	i32_t 			worker_num;
 	worker_p		p_workers;
 	access_p		p_accessor;
 }serv_object_t, *serv_object_p;
@@ -43,9 +55,13 @@ i32_t serv_load(string_t fpath, server_conf_p p_conf);
 
 serv_object_p serv_create(server_conf_p p_conf);
 
-i32_t serv_set_access_cb(serv_object_p p_obj, access_func_p p_acc);
+i32_t serv_set_access_cb(serv_object_p p_obj, access_func_p p_acc_f,
+						 context_t p_ctx, context_clean_func_p p_clean_f);
 
-i32_t serv_set_work_cb(serv_object_p p_obj, worker_func_p p_worker);
+i32_t serv_set_work_cb(serv_object_p p_obj, worker_func_p p_worker,
+						worker_data_fproc_p p_proc_f,
+						context_t p_ctx, i32_t ctx_size,
+						context_clean_func_p p_clean_f);
 
 i32_t serv_run(serv_object_p p_obj);
 

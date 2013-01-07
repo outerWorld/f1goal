@@ -5,8 +5,6 @@
 
 #include "f1g_queue.h"
 
-#define BLK_DATA_SIZE(buffer) (((elem_p)(buffer))->data_len)
-#define BLK_DATA(buffer) (buffer + sizeof(elem_t))
 
 #define BLK_ADDR(pos, p_obj) (p_obj->buffer + (pos) * p_obj->blk_size)
 
@@ -124,3 +122,12 @@ i8_t que_obj_destroy(que_obj_p p_obj)
 {
 	return F1G_OK;
 }
+
+i32_t que_obj_stat(que_obj_p p_obj)
+{
+	fprintf(stdout, "front=%d, tail=%d\n", p_obj->front, p_obj->tail);
+	fprintf(stdout, "blk_size=%d, blk_num=%d\n", p_obj->blk_size, p_obj->blk_num);
+
+	return F1G_OK;
+}
+
