@@ -85,9 +85,9 @@ serv_object_p serv_create(server_conf_p p_conf)
 	if (!p_obj) return NULL;
 	memset(p_obj, 0x00, sizeof(serv_object_t));
 
-	p_obj->p_accessor = (access_p)malloc(sizeof(access_t));
-	if (!p_obj->p_accessor) return NULL;
-	memset(p_obj->p_accessor, 0x00, sizeof(access_t));
+	p_obj->p_access = (access_p)malloc(sizeof(access_t));
+	if (!p_obj->p_access) return NULL;
+	memset(p_obj->p_access, 0x00, sizeof(access_t));
 
 	p_obj->p_workers = (worker_p)malloc(sizeof(worker_t)*p_conf->worker_num);
 	if (!p_obj->p_workers) return NULL;
@@ -95,10 +95,10 @@ serv_object_p serv_create(server_conf_p p_conf)
 	p_obj->worker_num = p_conf->worker_num;
 	
 	// retrive queues for workers and accessor
-	p_obj->p_accessor->p_ques = (que_obj_p*)malloc(sizeof(que_obj_p)*p_conf->worker_num);	
-	if (!p_obj->p_accessor->p_ques) return NULL;
-	p_obj->p_accessor->que_num = p_conf->worker_num;
-	p_obj->p_accessor->p_access_f;
+	p_obj->p_access->p_ques = (que_obj_p*)malloc(sizeof(que_obj_p)*p_conf->worker_num);	
+	if (!p_obj->p_access->p_ques) return NULL;
+	p_obj->p_access->que_num = p_conf->worker_num;
+	p_obj->p_access->p_access_f;
 
 	for (i=0; i<p_obj->worker_num; i++) {
 		p_que = que_obj_create(p_conf->que_size, p_conf->que_cap);
@@ -107,7 +107,11 @@ serv_object_p serv_create(server_conf_p p_conf)
 		p_obj->p_workers[i].p_que = p_que;
 		p_obj->p_workers[i].p_proc_f = worker_data_fproc_dft;
 		p_obj->p_workers[i].p_worker_f = worker_cb_dft;
-		p_obj->p_accessor->p_ques[i] = p_que;
+		p_obj->p_access->p_ques[i] = p_que;
+	}
+
+	if (F1G_OK != accessor_init(&p_obj->p_access->accessor, LINKER_EPOLL, SOCK_TYPE_LTCP, p_conf->serv_win)) {
+		return NULL;
 	}
 	
 	return p_obj;
@@ -235,8 +239,8 @@ i32_t serv_run(serv_object_p p_obj)
 		}
 	}
 
-	if (p_obj->p_accessor->p_access_f) p_acf = p_obj->p_accessor->p_access_f;
-	if (0 != pthread_create(&p_obj->p_accessor->id, NULL, p_acf, p_obj->p_accessor)) {
+	if (p_obj->p_access->p_access_f) p_acf = p_obj->p_access->p_access_f;
+	if (0 != pthread_create(&p_obj->p_access->id, NULL, p_acf, p_obj->p_access)) {
 		return F1G_ERR;
 	}
 
@@ -256,20 +260,20 @@ i32_t serv_destroy(serv_object_p p_obj)
 	}
 	free(p_obj->p_workers);
 
-	if (p_obj->p_accessor) {
-		for (i=0; i<p_obj->p_accessor->que_num; i++) {
-			que_obj_destroy(p_obj->p_accessor->p_ques[i]);
-			free(p_obj->p_accessor->p_ques[i]);
-			p_obj->p_accessor->p_ques[i] = NULL;
+	if (p_obj->p_access) {
+		for (i=0; i<p_obj->p_access->que_num; i++) {
+			que_obj_destroy(p_obj->p_access->p_ques[i]);
+			free(p_obj->p_access->p_ques[i]);
+			p_obj->p_access->p_ques[i] = NULL;
 		}
 
-		if (p_obj->p_accessor->p_ctx && p_obj->p_accessor->p_ctx_clean_f) {
-			p_obj->p_accessor->p_ctx_clean_f(p_obj->p_accessor->p_ctx);
-			free(p_obj->p_accessor->p_ctx);
-			p_obj->p_accessor->p_ctx = NULL;
+		if (p_obj->p_access->p_ctx && p_obj->p_access->p_ctx_clean_f) {
+			p_obj->p_access->p_ctx_clean_f(p_obj->p_access->p_ctx);
+			free(p_obj->p_access->p_ctx);
+			p_obj->p_access->p_ctx = NULL;
 		}
 
-		free(p_obj->p_accessor);
+		free(p_obj->p_access);
 	}
 
 	return F1G_OK;

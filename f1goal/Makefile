@@ -9,7 +9,7 @@ BinPath=./bin
 LibPath=./lib
 DepPath=./dep
 ObjPath=./objs
-IncPath=-I./include -I./tools
+IncPath=-I./include -I/usr/include
 ToolPath=./tools
 
 F1goalLib_S=libf1goal.a

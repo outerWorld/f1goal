@@ -44,7 +44,7 @@ typedef struct _access_s {
 typedef struct _serv_object_s {
 	i32_t 			worker_num;
 	worker_p		p_workers;
-	access_p		p_accessor;
+	access_p		p_access;
 }serv_object_t, *serv_object_p;
 
 i32_t serv_load(string_t fpath, server_conf_p p_conf);
