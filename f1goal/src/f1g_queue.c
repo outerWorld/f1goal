@@ -118,6 +118,23 @@ i8_p que_obj_tail(que_obj_p p_obj)
 	}
 }
 
+i8_p que_obj_next_freeblk(que_obj_p p_obj)
+{
+	return BLK_ADDR(p_obj->tail, p_obj);
+}
+
+i32_t que_obj_move_next(que_obj_p p_obj)
+{
+	if (que_obj_full(p_obj)) {
+		return F1G_ERR;
+	} else {
+		p_obj->tail = (p_obj->tail + 1) % p_obj->blk_num;
+		return F1G_OK;
+	}
+
+	return F1G_OK;
+}
+
 i8_t que_obj_destroy(que_obj_p p_obj)
 {
 	return F1G_OK;

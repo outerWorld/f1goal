@@ -10,8 +10,10 @@ que_size = 512
 que_cap = 1024
 # tcp:Long-connect(0x10), Short-connect(0x11);udp(0x20), pcap(0x30)
 serv_type = 0x10
-# 
-serv_win = 127.0.0.0:8080
+# for epoll
+serv_win = ip:127.0.0.0;port:8080;socket_size:100;read_timeout:10;write_timeout:10;read_buf:1024;write_buf:1024
+# for pcap
+# serv_win = linkname:eth0;filter:tcp dst port 80
 # select(0), poll(1), epoll(2)
 access_mode = 0
 

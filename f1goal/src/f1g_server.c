@@ -7,6 +7,7 @@
 
 #include "f1g_smart_conf.h"
 #include "f1g_server.h"
+#include "f1g_ipc_msg.h"
 
 static void * access_cb_dft(void *arg);
 static void * worker_cb_dft(void *arg);
@@ -160,7 +161,7 @@ static void *worker_cb_dft(void *arg)
 
 		// preprocess the data
 		data = que_obj_head(p_que);
-		data_len = BLK_DATA_SIZE(data);
+		data_len = BLK_DATA_LEN(data);
 		data = BLK_DATA(data);
 
 		fprintf(stdout, "%s,%d\n", __FUNCTION__, __LINE__);
@@ -179,34 +180,43 @@ static void *worker_cb_dft(void *arg)
 
 static void * access_cb_dft(void *arg)
 {
-	i32_t 	que_sel = 0; // select queue
-	i32_t 	data_len = 0;
-	i8_p 	data = NULL;
-	i8_t	test_buf[1024] = { 0 };
-	access_p p_acc = (access_p)arg;
-	que_obj_p p_sel_que = NULL;
+	i32_t 		que_sel = 0; // select queue
+	buffer_t 	buff = { 0 };
+	access_p 	p_acc = (access_p)arg;
+	que_obj_p 	p_sel_que = NULL;
+	accessor_p	accessor = &p_acc->accessor;
 	
-	data = test_buf;
 	while (1) {
-		// get data
-		sprintf(data, "from access_cb [%d]", (int)p_acc->id);
-		data_len = strlen(data)+1;
-		p_sel_que = p_acc->p_ques[que_sel];
-		if (!p_sel_que) {
-			fprintf(stderr, "%d queue is NULL\n", que_sel);
-			break;
-		}
-		//que_obj_stat(p_sel_que);
-		if (que_obj_full(p_sel_que)) {
+		// detect there is any data
+		if (0 == accessor_detect(accessor)) {
 			continue;
 		}
-		// preprocess
 
-		// send data to queue
-		que_obj_add(p_sel_que, data, data_len);
+		// get data
+		while (accessor_check_status(accessor)) {
+			// select the queue for sending data
+			que_sel = 0;
+			p_sel_que = p_acc->p_ques[que_sel];
+			
+			// get buffer for storing received data.
+			buff.size = BLK_SIZE(p_sel_que); // the size is total block size substracted the block header
+			buff.buf = que_obj_next_freeblk(p_sel_que); // it includes the block header
 
-		// post process
-		//
+			// receive data.
+		
+			BLK_DATA_LEN(buff.buf) = buff.len;
+		
+			// preprocess
+
+			// send data to queue
+			que_obj_move_next(p_sel_que);
+			//que_obj_stat(p_sel_que);
+
+			// post process
+			//
+		}
+
+		accessor_clear(accessor);
 	}
 
 	return NULL;
@@ -253,10 +263,10 @@ i32_t serv_destroy(serv_object_p p_obj)
 			p_obj->p_accessor->p_ques[i] = NULL;
 		}
 
-		if (p_obj->p_ctx && p_obj->p_ctx_clean_f) {
-			p_obj->p_ctx_clean_f(p_obj->p_ctx);
-			free(p_obj->p_ctx);
-			p_obj->p_ctx = NULL;
+		if (p_obj->p_accessor->p_ctx && p_obj->p_accessor->p_ctx_clean_f) {
+			p_obj->p_accessor->p_ctx_clean_f(p_obj->p_accessor->p_ctx);
+			free(p_obj->p_accessor->p_ctx);
+			p_obj->p_accessor->p_ctx = NULL;
 		}
 
 		free(p_obj->p_accessor);

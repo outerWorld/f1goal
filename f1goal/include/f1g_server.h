@@ -4,6 +4,7 @@
 
 #include "f1g_basic_types.h"
 #include "f1g_buffer.h"
+#include "f1g_accessor.h"
 #include "f1g_queue.h"
 #include "f1g_server_conf.h"
 
@@ -11,7 +12,7 @@ struct worker_s;
 typedef struct worker_s * worker_p;
 typedef que_obj_p queue_p;
 typedef pthread_t worker_id_t;
-typedef pthread_t accessor_id_t;
+typedef pthread_t access_id_t;
 typedef void * context_t;
 
 typedef void * (*access_func_p)(void *arg);
@@ -30,14 +31,9 @@ typedef struct worker_s {
 	que_obj_p				p_que;
 }worker_t, *worker_p;
 
-typedef struct _access_context_s {
-	i32_t					accessor;	//socket fd for tcp/udp;
-	buffer_t				rd_buf;
-	buffer_t				wr_buf;
-}access_context_t, *access_context_p;
-
 typedef struct _access_s {
-	accessor_id_t			id;
+	access_id_t				id;
+	accessor_t				accessor;
 	access_func_p 			p_access_f;
 	context_t				p_ctx;
 	context_clean_func_p 	p_ctx_clean_f;
