@@ -37,6 +37,7 @@ typedef struct _epoller_s {
 	i32_t	listen_fd;   // socketfd for listening connections
 	i32_t	event_size;
 	i32_t	event_num;
+	i32_t   next_event;  // the event to be processed
 	struct epoll_event * events;
 }epoller_t, *epoller_p;
 

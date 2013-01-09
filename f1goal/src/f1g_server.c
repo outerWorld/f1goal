@@ -111,6 +111,7 @@ serv_object_p serv_create(server_conf_p p_conf)
 	}
 
 	if (F1G_OK != accessor_init(&p_obj->p_access->accessor, LINKER_EPOLL, SOCK_TYPE_LTCP, p_conf->serv_win)) {
+		fprintf(stderr, "accessor_init fail!\n");
 		return NULL;
 	}
 	
@@ -168,7 +169,7 @@ static void *worker_cb_dft(void *arg)
 		data_len = BLK_DATA_LEN(data);
 		data = BLK_DATA(data);
 
-		fprintf(stdout, "%s,%d\n", __FUNCTION__, __LINE__);
+		//fprintf(stdout, "%s,%d\n", __FUNCTION__, __LINE__);
 		// data process
 		if (0 != p_worker->p_proc_f(p_worker->p_ctx, data, data_len)) {
 			break;

@@ -1,4 +1,7 @@
-
+/*
+ * Author: huang chunping
+ * Date  : 2013-01-06
+ */
 #ifndef __F1G_SERVER_H
 #define __F1G_SERVER_H
 

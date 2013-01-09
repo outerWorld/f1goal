@@ -14,6 +14,5 @@ serv_type = 0x10
 serv_win = ip:127.0.0.0;port:8080;socket_size:100;read_timeout:10;write_timeout:10;read_buf:1024;write_buf:1024
 # for pcap
 # serv_win = linkname:eth0;filter:tcp dst port 80
-# select(0), poll(1), epoll(2)
+# epoll(0), poll(1), select(1)  
 access_mode = 0
-

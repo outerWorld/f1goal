@@ -2,7 +2,7 @@ INC=-I../include
 CC=gcc
 ALL_OBJS=
 
-include Makefile.cc
+include Makefile.am
 
 ALL_OBJS += ${OBJS}
 

@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 	serv_run(p_serv);
 	
 	while (1) {
-		sleep(5);
+		sleep(10);
 	}
 
 	serv_destroy(p_serv);

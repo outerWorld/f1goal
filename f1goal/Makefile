@@ -17,7 +17,7 @@ F1goalLib_D=libf1goal.so
 LIBF1GOAL=${F1goalLib_S} ${F1goalLib_D}
 LIB_OBJS=
 
-include src/Makefile.cc
+include src/Makefile.am
 LIB_OBJS += $(foreach obj,${OBJS}, src/${obj})
 
 Donothing:
@@ -40,7 +40,7 @@ tools:
 	cd tools && sh build_tools.sh && cd ..
 
 gen_objs:
-	cd src && make -f Makefile && cd ..
+	cd src && make all -f Makefile && cd ..
 
 gen_libs:${LIBF1GOAL}
 
@@ -63,4 +63,3 @@ clean_test:
 	cd test && make clean -f Makefile && cd ..
 
 clean_all: clean_libs clean_tools clean_objs clean_test
-
