@@ -181,9 +181,9 @@ i32_t accessor_check_status(accessor_p p_acc)
 					if (-1 == cli_fd) {
 						fprintf(stderr, "%d accept fail [%d,%s]\n", p_ep->listen_fd, errno, strerror(errno));
 					} else {
-						set_sockfd_nonblk(cli_fd);
+						//set_sockfd_nonblk(cli_fd);
 						memset(&new_ev, 0x00, sizeof(struct epoll_event));
-						new_ev.events = EPOLLIN | EPOLLET;
+						new_ev.events = EPOLLIN | EPOLLET | EPOLLERR | EPOLLHUP;
 						// i think the add_ev.data.ptr = (fd,cli_addr) is more beautiful.
 						new_ev.data.fd = cli_fd;
 						if (0 != epoll_ctl(p_ep->accessor_id, EPOLL_CTL_ADD, cli_fd, &new_ev)) {
@@ -195,10 +195,15 @@ i32_t accessor_check_status(accessor_p p_acc)
 				} else {
 					ev_fd = ev->data.fd;
 					fprintf(stdout, "events[%08x] for socket[%d]\n", ev->events, ev_fd);
-					if (ev->events & EPOLLIN) {
+					if (ev->events & EPOLLHUP) {
+						fprintf(stdout, "events EPOLLHUP for [%d]\n", ev_fd);
+					} else if (ev->events & EPOLLERR) {
+						fprintf(stderr, " event EPOLLERR for [%d]\n", cli_fd);
+					} else if (ev->events & EPOLLIN) {
 						fprintf(stdout, "events EPOLLIN for [%d]\n", ev_fd);
 						p_acc->rdbuf.len = 0;
-						p_acc->rdbuf.len = recv(ev_fd, p_acc->rdbuf.buf, p_acc->rdbuf.size, 0);
+						//p_acc->rdbuf.len = recv(ev_fd, p_acc->rdbuf.buf, p_acc->rdbuf.size, 0);
+						p_acc->rdbuf.len = recvfrom(ev_fd, p_acc->rdbuf.buf, p_acc->rdbuf.size, 0, (struct sockaddr*)&cli_addr, &addr_len);
 						if (p_acc->rdbuf.len > 0) {
 							p_acc->rdbuf.buf[p_acc->rdbuf.len] = '\0';
 							fprintf(stdout, "recv [%s] from %d\n", p_acc->rdbuf.buf, ev_fd);
@@ -207,17 +212,15 @@ i32_t accessor_check_status(accessor_p p_acc)
 							new_ev.events = 0;
 							new_ev.data.fd = ev_fd;
 							if (0 != epoll_ctl(p_ep->accessor_id, EPOLL_CTL_DEL, ev_fd, &new_ev)) {
-							fprintf(stderr, "epoll_ctl EPOLL_CTL_DEL %d fail\n", cli_fd);
-							return 0;	
+								fprintf(stderr, "epoll_ctl EPOLL_CTL_DEL %d fail\n", cli_fd);
+								return 0;
 							}
 						} else {
 							fprintf(stderr, "recv fail[%d,%s] from %d [%d,%s]\n", p_acc->rdbuf.len, p_acc->rdbuf.buf, ev_fd, errno, strerror(errno));
 						}
 						send(ev_fd, "hello", 5, 0);
 					} else if (ev->events & EPOLLOUT) {
-							fprintf(stdout, "events EPOLLOUT for [%d]", ev_fd);
-					} else if (ev->events & EPOLLERR) {
-						fprintf(stderr, " socket %d EPOLLERR\n", cli_fd);
+						fprintf(stdout, "events EPOLLOUT for [%d]", ev_fd);
 					} else {
 					}
 				}
