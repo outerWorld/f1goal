@@ -1,5 +1,5 @@
 CC=gcc
-TESTS=test_http test_template test_lang_code test_smart_conf test_server test_queue
+TESTS=test_http test_template test_lang_code test_smart_conf test_server test_queue test_cli
 LIB=../lib/libf1goal.a
 C_FLAG=-g
 
@@ -15,6 +15,8 @@ test_smart_conf:test_smart_conf.o ${LIB}
 	${CC} ${C_FLAG} -o $@ $^
 test_server:test_server.o ${LIB}
 	${CC} ${C_FLAG} -o $@ $^ -lpthread
+test_cli:test_cli.o ${LIB}
+	${CC} ${C_FLAG} -o $@ $^
 
 test_queue:test_queue.o ${LIB}
 	${CC} ${C_FLAG} -o $@ $^ -lpthread

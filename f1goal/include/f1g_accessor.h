@@ -22,6 +22,13 @@ enum {
 	SOCK_TYPE_RAW_UDP,
 };
 
+typedef struct _sock_info_s {
+	i32_t	fd;
+	i32_t 	src_ip;
+	u16_t	src_port;
+	i16_t	sock_status; // INIT(0x00), DATA IN(0x01), DISCONNECT(0x02), ERROR(0x03)
+}sock_info_t, *sock_info_p;
+
 typedef struct _selector_s {
 	i32_t	accessor_id; // epollfd or selectfd
 	i32_t	listen_fd;   // socketfd for listening connections
@@ -39,6 +46,7 @@ typedef struct _epoller_s {
 	i32_t	event_num;
 	i32_t   next_event;  // the event to be processed
 	struct epoll_event * events;
+	//sock_info_p p_si; // for reducing memory copy, make a preallocation, implemented later.
 }epoller_t, *epoller_p;
 
 typedef struct _pcaper_s {
@@ -59,7 +67,7 @@ accessor_p accessor_create(i32_t link_type, i32_t sock_type, string_t paras);
 i32_t accessor_detect(accessor_p p_acc);
 
 // it returns the number of data not fetched in accessor
-i32_t accessor_check_status(accessor_p p_acc);
+i32_t accessor_check_status(accessor_p p_acc, sock_info_p *p_si);
 
 i32_t accessor_get_data(accessor_p p_acc);
 

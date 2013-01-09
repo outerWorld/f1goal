@@ -187,9 +187,10 @@ static void * access_cb_dft(void *arg)
 {
 	i32_t 		que_sel = 0; // select queue
 	buffer_t 	buff = { 0 };
-	access_p 	p_acc = (access_p)arg;
 	que_obj_p 	p_sel_que = NULL;
+	access_p 	p_acc = (access_p)arg;
 	accessor_p	accessor = &p_acc->accessor;
+	sock_info_p p_sock_info;
 	
 	while (1) {
 		// detect there is any data
@@ -198,7 +199,7 @@ static void * access_cb_dft(void *arg)
 		}
 
 		// get data
-		while (accessor_check_status(accessor)) {
+		while (accessor_check_status(accessor, &p_sock_info)) {
 			// select the queue for sending data
 			que_sel = 0;
 			p_sel_que = p_acc->p_ques[que_sel];

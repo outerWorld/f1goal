@@ -34,8 +34,10 @@ static i32_t set_sockfd_nonblk(i32_t fd)
 //	ip:127.0.0.1;port:8080;socket_size:100;read_timeout:10;write_timeout:10;
 static i32_t epoller_init(epoller_p p_ep, i32_t sock_type, string_t paras)
 {
+	i32_t	i = 0;
 	struct sockaddr_in addr;
 	struct epoll_event ev;
+	sock_info_p p_add_info = NULL;
 
 	p_ep->accessor_id = epoll_create(512);
 	if (-1 == p_ep->accessor_id) {
@@ -49,7 +51,14 @@ static i32_t epoller_init(epoller_p p_ep, i32_t sock_type, string_t paras)
 
 	memset(&ev, 0x00, sizeof(struct epoll_event));
 	ev.events = EPOLLIN | EPOLLET;
-	ev.data.fd = p_ep->listen_fd;
+	//ev.data.fd = p_ep->listen_fd;
+	p_add_info = (sock_info_p)malloc(sizeof(sock_info_t));
+	if (!p_add_info) return F1G_ERR;
+	memset(p_add_info, 0x00, sizeof(sock_info_t));
+	p_add_info->fd = p_ep->listen_fd;
+	p_add_info->src_ip = addr.sin_addr.s_addr;
+	p_add_info->src_port = addr.sin_port;
+	ev.data.ptr = p_add_info;
 	if (0 != epoll_ctl(p_ep->accessor_id, EPOLL_CTL_ADD, p_ep->listen_fd, &ev)) {
 		fprintf(stderr, "epoll_ctl EPOLL_CTL_ADD %d fail [%d,%s]\n", p_ep->listen_fd, errno, strerror(errno));
 		return F1G_ERR;
@@ -80,6 +89,9 @@ static i32_t epoller_init(epoller_p p_ep, i32_t sock_type, string_t paras)
 
 i32_t accessor_init(accessor_p p_acc, i32_t link_type, i32_t sock_type, string_t paras)
 {
+	buffer_init(&p_acc->rdbuf, 1024);
+	buffer_init(&p_acc->wrbuf, 1024);
+
 	switch (link_type) {
 		case LINKER_EPOLL:
 			p_acc->linkers[LINKER_EPOLL] = malloc(sizeof(epoller_t));
@@ -119,8 +131,6 @@ accessor_p accessor_create(i32_t type, i32_t sock_type, string_t paras)
 		free(p_acc);
 		return NULL;
 	}
-	buffer_init(&p_acc->rdbuf, 1024);
-	buffer_init(&p_acc->wrbuf, 1024);
 
 	return p_acc;
 }
@@ -156,7 +166,7 @@ i32_t accessor_detect(accessor_p p_acc)
 	return n;
 }
 
-i32_t accessor_check_status(accessor_p p_acc)
+i32_t accessor_check_status(accessor_p p_acc, sock_info_p *p_si)
 {
 	i32_t n = 0;
 	i32_t ev_fd = 0;
@@ -166,6 +176,7 @@ i32_t accessor_check_status(accessor_p p_acc)
 	struct epoll_event * ev;
 	struct epoll_event new_ev;
 	struct sockaddr_in cli_addr;
+	sock_info_p p_add_info = NULL;
 
 	switch (p_acc->link_mode) {
 		case LINKER_EPOLL:
@@ -175,17 +186,26 @@ i32_t accessor_check_status(accessor_p p_acc)
 				ev = &p_ep->events[p_ep->next_event];
 				// process event
 				//fprintf(stdout, "listen_fd=%d, event_fd=%d\n", p_ep->listen_fd, ev->data.fd);
-				if (ev->data.fd == p_ep->listen_fd) {
+				p_add_info = ev->data.ptr;
+				if (p_add_info->fd == p_ep->listen_fd) {
 					//fprintf(stdout, "to accept \n");
 					cli_fd = accept(p_ep->listen_fd, (struct sockaddr*)&cli_addr, &addr_len);
 					if (-1 == cli_fd) {
 						fprintf(stderr, "%d accept fail [%d,%s]\n", p_ep->listen_fd, errno, strerror(errno));
 					} else {
-						//set_sockfd_nonblk(cli_fd);
+						set_sockfd_nonblk(cli_fd);
 						memset(&new_ev, 0x00, sizeof(struct epoll_event));
 						new_ev.events = EPOLLIN | EPOLLET | EPOLLERR | EPOLLHUP;
+						//new_ev.events = EPOLLIN | EPOLLERR | EPOLLHUP;
+						p_add_info = (sock_info_p)malloc(sizeof(sock_info_t));
+						if (!p_add_info) return 0;
+						p_add_info->sock_status = 0x00;
+						p_add_info->fd = cli_fd;
+						p_add_info->src_ip = cli_addr.sin_addr.s_addr;
+						p_add_info->src_port = cli_addr.sin_port;
 						// i think the add_ev.data.ptr = (fd,cli_addr) is more beautiful.
-						new_ev.data.fd = cli_fd;
+						//new_ev.data.fd = cli_fd;
+						new_ev.data.ptr = p_add_info;
 						if (0 != epoll_ctl(p_ep->accessor_id, EPOLL_CTL_ADD, cli_fd, &new_ev)) {
 							fprintf(stderr, "epoll_ctl EPOLL_CTL_ADD %d fail\n", cli_fd);
 							return 0;
@@ -193,14 +213,15 @@ i32_t accessor_check_status(accessor_p p_acc)
 						fprintf(stdout, "accept %d \n", cli_fd);
 					}
 				} else {
-					ev_fd = ev->data.fd;
+					p_add_info = ev->data.ptr;
+					ev_fd = p_add_info->fd;
 					fprintf(stdout, "events[%08x] for socket[%d]\n", ev->events, ev_fd);
 					if (ev->events & EPOLLHUP) {
 						fprintf(stdout, "events EPOLLHUP for [%d]\n", ev_fd);
 					} else if (ev->events & EPOLLERR) {
 						fprintf(stderr, " event EPOLLERR for [%d]\n", cli_fd);
 					} else if (ev->events & EPOLLIN) {
-						fprintf(stdout, "events EPOLLIN for [%d]\n", ev_fd);
+						fprintf(stdout, "events EPOLLIN for [%d] read buffer_size:%d\n", ev_fd, p_acc->rdbuf.size);
 						p_acc->rdbuf.len = 0;
 						//p_acc->rdbuf.len = recv(ev_fd, p_acc->rdbuf.buf, p_acc->rdbuf.size, 0);
 						p_acc->rdbuf.len = recvfrom(ev_fd, p_acc->rdbuf.buf, p_acc->rdbuf.size, 0, (struct sockaddr*)&cli_addr, &addr_len);
@@ -210,7 +231,9 @@ i32_t accessor_check_status(accessor_p p_acc)
 						} else if (0 == p_acc->rdbuf.len){
 							fprintf(stdout, "disconnected from socket [%d]\n", ev_fd);
 							new_ev.events = 0;
-							new_ev.data.fd = ev_fd;
+							//new_ev.data.fd = ev_fd;
+							if (p_add_info) free(p_add_info);
+							p_add_info = NULL;
 							if (0 != epoll_ctl(p_ep->accessor_id, EPOLL_CTL_DEL, ev_fd, &new_ev)) {
 								fprintf(stderr, "epoll_ctl EPOLL_CTL_DEL %d fail\n", cli_fd);
 								return 0;

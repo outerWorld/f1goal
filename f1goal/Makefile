@@ -24,12 +24,10 @@ Donothing:
 	@echo ${LIB_OBJS}
 
 ${F1goalLib_S}:${LIB_OBJS}
-	echo $^
 	ar rcs $@ $^
 	mv $@ lib
 
-${F1goalLib_D}:$(wildcard src/*.o)
-	echo $^
+${F1goalLib_D}:${LIB_OBJS}
 	${CC} -shared -o $@ $^ -lpthread
 	mv $@ lib
 

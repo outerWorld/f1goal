@@ -36,3 +36,11 @@ i32_t buffer_destroy(buffer_p p_buf)
 
 	return F1G_OK;
 }
+
+i32_t buffer_show(buffer_p p_buf)
+{
+	fprintf(stdout, "buffer status: size=%d, len=%d, address=%p\n",
+			p_buf->size, p_buf->len, p_buf->buf);
+
+	return F1G_OK;
+}
