@@ -11,8 +11,6 @@
 #include "f1g_queue.h"
 #include "f1g_server_conf.h"
 
-struct worker_s;
-typedef struct worker_s * worker_p;
 typedef que_obj_p queue_p;
 typedef pthread_t worker_id_t;
 typedef pthread_t access_id_t;
