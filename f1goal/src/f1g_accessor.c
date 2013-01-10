@@ -17,15 +17,81 @@
 
 #include "f1g_accessor.h"
 
+enum {
+	RECV_OK = 0x01, // the lowest bit: 1 (ok), 0(error)
+	RECV_TIMEOUT = 0x02,
+	RECV_DISC = 0x04, // disconnected found
+	RECV_MEM_LACK = 0x08 // maybe need more memory.
+};
+static i32_t nonblk_recvfrom(i32_t fd, buffer_p p_buf, i32_t *recv_stat)
+{
+	i32_t len = 0;
+	i32_t recv_flag = 0; // 0 (continue), 1(complete)
+	i32_t wait_times = 0;
+	i32_t recv_len = 0;
+	socklen_t addr_len = 0;
+	struct sockaddr_in addr;
+
+	*recv_stat = RECV_OK;
+	addr_len = sizeof(addr);
+	while (!recv_flag && len < p_buf->size) {
+		recv_len = recvfrom(fd, p_buf->buf + len, p_buf->size-len, 0, (struct sockaddr*)&addr, &addr_len);
+		if (-1 == recv_len) {
+			fprintf(stdout, "%s errno = %d,%s\n", __FUNCTION__, errno, strerror(errno));
+			switch (errno) {
+				case EINTR:
+				case EAGAIN:
+				//case EWOULDBLOCK:
+					if (++wait_times >= 3) {
+						*recv_stat |= RECV_TIMEOUT;
+						recv_flag = 1;
+					}
+					usleep(5);	// wait for data be ok
+					break;
+				case EBADF:
+				case ECONNREFUSED:
+				case EFAULT:
+				case EINVAL:
+				case ENOTSOCK:
+				case ENOTCONN:
+					*recv_stat &= ~RECV_OK;
+					recv_flag = 1;
+					break;
+				default:
+					*recv_stat &= ~RECV_OK;
+					recv_flag = 1;
+					break;
+			}
+		} else if (0 == recv_len) {
+			// disconnected by peer.
+			*recv_stat |= RECV_DISC;
+			recv_flag = 1;
+		} else {
+			len += recv_len;
+			fprintf(stdout, "%s get %d bytes\n", __FUNCTION__, recv_len);
+		}
+	}
+
+	if (len >= p_buf->size) {
+		*recv_stat |= RECV_MEM_LACK;
+		fprintf(stdout, "%s detect RECV_MEM_LACK\n", __FUNCTION__);
+	}
+	p_buf->len = len;
+	p_buf->buf[len] = '\0';
+	fprintf(stdout, "%s total %d bytes\n", __FUNCTION__, len);
+
+	return F1G_OK;
+}
+
 static i32_t set_sockfd_nonblk(i32_t fd)
 {
 	int opts;
 
-	opts=fcntl(fd,F_GETFL);
+	opts = fcntl(fd, F_GETFL);
 	if (opts < 0) return F1G_ERR; 
 
-    opts = opts|O_NONBLOCK;
-    if (fcntl(fd,F_SETFL,opts) < 0) return F1G_ERR;
+    opts = opts | O_NONBLOCK;
+    if (fcntl(fd, F_SETFL, opts) < 0) return F1G_ERR;
 
 	return F1G_OK;
 }
@@ -89,8 +155,8 @@ static i32_t epoller_init(epoller_p p_ep, i32_t sock_type, string_t paras)
 
 i32_t accessor_init(accessor_p p_acc, i32_t link_type, i32_t sock_type, string_t paras)
 {
-	buffer_init(&p_acc->rdbuf, 1024);
-	buffer_init(&p_acc->wrbuf, 1024);
+	buffer_init(&p_acc->rdbuf, 512);
+	buffer_init(&p_acc->wrbuf, 512);
 
 	switch (link_type) {
 		case LINKER_EPOLL:
@@ -170,7 +236,8 @@ i32_t accessor_check_status(accessor_p p_acc, sock_info_p *p_si)
 {
 	i32_t n = 0;
 	i32_t ev_fd = 0;
-	i32_t  cli_fd = 0;
+	i32_t cli_fd = 0;
+	i32_t recv_stat = 0;
 	epoller_p p_ep = NULL;
 	socklen_t addr_len = 0;
 	struct epoll_event * ev;
@@ -218,33 +285,60 @@ i32_t accessor_check_status(accessor_p p_acc, sock_info_p *p_si)
 					fprintf(stdout, "events[%08x] for socket[%d]\n", ev->events, ev_fd);
 					if (ev->events & EPOLLHUP) {
 						fprintf(stdout, "events EPOLLHUP for [%d]\n", ev_fd);
+						new_ev.events = 0;
+						if (p_add_info) free(p_add_info);
+						p_add_info = NULL;
+						if (0 != epoll_ctl(p_ep->accessor_id, EPOLL_CTL_DEL, ev_fd, &new_ev)) {
+							fprintf(stderr, "epoll_ctl EPOLL_CTL_DEL %d fail\n", cli_fd);
+							return 0;
+						}
 					} else if (ev->events & EPOLLERR) {
 						fprintf(stderr, " event EPOLLERR for [%d]\n", cli_fd);
+						new_ev.events = 0;
+						if (p_add_info) free(p_add_info);
+						p_add_info = NULL;
+						if (0 != epoll_ctl(p_ep->accessor_id, EPOLL_CTL_DEL, ev_fd, &new_ev)) {
+							fprintf(stderr, "epoll_ctl EPOLL_CTL_DEL %d fail\n", cli_fd);
+							return 0;
+						}
+					
 					} else if (ev->events & EPOLLIN) {
 						fprintf(stdout, "events EPOLLIN for [%d] read buffer_size:%d\n", ev_fd, p_acc->rdbuf.size);
 						p_acc->rdbuf.len = 0;
-						//p_acc->rdbuf.len = recv(ev_fd, p_acc->rdbuf.buf, p_acc->rdbuf.size, 0);
-						p_acc->rdbuf.len = recvfrom(ev_fd, p_acc->rdbuf.buf, p_acc->rdbuf.size, 0, (struct sockaddr*)&cli_addr, &addr_len);
+						nonblk_recvfrom(ev_fd, &p_acc->rdbuf, &recv_stat);
 						if (p_acc->rdbuf.len > 0) {
-							p_acc->rdbuf.buf[p_acc->rdbuf.len] = '\0';
-							fprintf(stdout, "recv [%s] from %d\n", p_acc->rdbuf.buf, ev_fd);
-						} else if (0 == p_acc->rdbuf.len){
-							fprintf(stdout, "disconnected from socket [%d]\n", ev_fd);
+							fprintf(stdout, "recv %d bytes [%s]\n", p_acc->rdbuf.len, p_acc->rdbuf.buf);
+						}
+						if (!(recv_stat & RECV_OK) || recv_stat & RECV_DISC) {
 							new_ev.events = 0;
-							//new_ev.data.fd = ev_fd;
 							if (p_add_info) free(p_add_info);
 							p_add_info = NULL;
 							if (0 != epoll_ctl(p_ep->accessor_id, EPOLL_CTL_DEL, ev_fd, &new_ev)) {
 								fprintf(stderr, "epoll_ctl EPOLL_CTL_DEL %d fail\n", cli_fd);
 								return 0;
 							}
-						} else {
-							fprintf(stderr, "recv fail[%d,%s] from %d [%d,%s]\n", p_acc->rdbuf.len, p_acc->rdbuf.buf, ev_fd, errno, strerror(errno));
 						}
+						if (recv_stat & RECV_TIMEOUT) {
+							// do nothing
+						}
+						if (recv_stat & RECV_MEM_LACK) {
+							fprintf(stdout, "1 Read again as lack of memory\n");
+							p_acc->rdbuf.len = 0;
+							nonblk_recvfrom(ev_fd, &p_acc->rdbuf, &recv_stat);
+							fprintf(stdout, "Re recv %d bytes [%s]\n", p_acc->rdbuf.len, p_acc->rdbuf.buf);
+							
+							if (recv_stat & RECV_MEM_LACK) {
+								fprintf(stdout, "2 Read again as lack of memory\n");
+								p_acc->rdbuf.len = 0;
+								nonblk_recvfrom(ev_fd, &p_acc->rdbuf, &recv_stat);
+								fprintf(stdout, "Re recv %d bytes [%s]\n", p_acc->rdbuf.len, p_acc->rdbuf.buf);
+							}
+						} 
 						send(ev_fd, "hello", 5, 0);
 					} else if (ev->events & EPOLLOUT) {
 						fprintf(stdout, "events EPOLLOUT for [%d]", ev_fd);
 					} else {
+						fprintf(stdout, "events %08x for [%d]", ev->events, ev_fd);
 					}
 				}
 				// set next event to be processed
