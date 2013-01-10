@@ -22,12 +22,23 @@ enum {
 	SOCK_TYPE_RAW_UDP,
 };
 
+// definition of socket status(sst)
+enum {
+	SST_INIT = 0x00,
+	SST_DATA_IN,
+	SST_DATA_OUT,
+	SST_DISC, // disconnect
+	SST_ERR,
+	SST_UNKNOWN,
+	SST_NUM
+};
 typedef struct _sock_info_s {
 	i32_t	fd;
-	i32_t 	src_ip;
+	u32_t 	src_ip;
 	u16_t	src_port;
 	i16_t	sock_status; // INIT(0x00), DATA IN(0x01), DISCONNECT(0x02), ERROR(0x03)
 }sock_info_t, *sock_info_p;
+i32_t sock_info_show(sock_info_p p_si);
 
 typedef struct _selector_s {
 	i32_t	accessor_id; // epollfd or selectfd
@@ -59,6 +70,15 @@ typedef struct _accessor_s {
 	void *		linkers[LINKER_MAX_NUM];
 }accessor_t, *accessor_p;
 
+enum {
+	RECV_OK = 0x01, // the lowest bit: 1 (ok), 0(error)
+	RECV_TIMEOUT = 0x02,
+	RECV_DISC = 0x04, // disconnected found
+	RECV_MEM_LACK = 0x08 // maybe need more memory.
+};
+i32_t nonblk_recvfrom(i32_t fd, buffer_p p_buf, i32_t *recv_stat);
+i32_t nonblk_sendto(i32_t fd, u32_t ip, u16_t port, buffer_p p_buf, i32_t *send_stat);
+
 i32_t accessor_init(accessor_p p_acc, i32_t link_mode, i32_t sock_type, string_t paras);
 
 accessor_p accessor_create(i32_t link_type, i32_t sock_type, string_t paras);
@@ -67,7 +87,7 @@ accessor_p accessor_create(i32_t link_type, i32_t sock_type, string_t paras);
 i32_t accessor_detect(accessor_p p_acc);
 
 // it returns the number of data not fetched in accessor
-i32_t accessor_check_status(accessor_p p_acc, sock_info_p *p_si);
+i32_t accessor_check_status(accessor_p p_acc, sock_info_p p_si);
 
 i32_t accessor_get_data(accessor_p p_acc);
 

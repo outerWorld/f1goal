@@ -11,8 +11,8 @@
 
 static void * access_cb_dft(void *arg);
 static void * worker_cb_dft(void *arg);
-static i32_t worker_data_fproc_dft(context_t ctx, void *user_data, i32_t data_len);
-
+static i32_t worker_data_fproc_dft(context_t ctx, buffer_p p_rdbuf,
+								   buffer_p p_wrbuf, i32_t *proc_st);
 // 
 #define SERV_SYS_CFG "serv.ini"
 
@@ -69,9 +69,22 @@ i32_t serv_load(char *fpath, server_conf_p p_conf)
 	return F1G_OK;
 }
 
-static i32_t worker_data_fproc_dft(context_t ctx, void *user_data, i32_t data_len)
+static i32_t worker_data_fproc_dft(context_t ctx, buffer_p p_rdbuf,
+								   buffer_p p_wrbuf, i32_t *proc_st)
 {
-	fprintf(stdout, "data_size = %d, data[%s]\n", data_len, (char*)user_data);
+	i32_t len = 0;
+	i8_p response = "\n\t so it's my response";
+
+	*proc_st = PROC_ST_INIT;
+
+	// here, do not call buffer_clear to p_wrbuf, as the caller may have put some data in write buffer.
+	
+	buffer_append(p_wrbuf, buffer_data(p_rdbuf), buffer_data_len(p_rdbuf));
+	buffer_append(p_wrbuf, response, strlen(response));
+
+	// tell the caller to send buffer to client.
+	*proc_st = PROC_ST_SENDBUF;
+
 	return F1G_OK;
 }
 
@@ -108,6 +121,8 @@ serv_object_p serv_create(server_conf_p p_conf)
 		p_obj->p_workers[i].p_proc_f = worker_data_fproc_dft;
 		p_obj->p_workers[i].p_worker_f = worker_cb_dft;
 		p_obj->p_access->p_ques[i] = p_que;
+		buffer_init(&p_obj->p_workers[i].rdbuf, 1024);
+		buffer_init(&p_obj->p_workers[i].wrbuf, 1024);
 	}
 
 	if (F1G_OK != accessor_init(&p_obj->p_access->accessor, LINKER_EPOLL, SOCK_TYPE_LTCP, p_conf->serv_win)) {
@@ -153,26 +168,53 @@ i32_t serv_set_work_cb(serv_object_p p_obj, worker_func_p p_worker,
 
 static void *worker_cb_dft(void *arg)
 {
+	sock_info_p p_si;
 	i8_p 	  	data = NULL;
+	i32_t		r_flag = 1;
 	i32_t		data_len = 0;
+	i32_t		send_stat = 0;
+	i32_t		recv_stat = 0;
+	i32_t		proc_stat = PROC_ST_INIT;
 	worker_p 	p_worker = (worker_p)arg;
 	que_obj_p 	p_que = p_worker->p_que;
+	buffer_p	p_rdbuf = &p_worker->rdbuf;
+	buffer_p	p_wrbuf = &p_worker->wrbuf;
 	
-	while (1) {
+	while (r_flag) {
 		if (que_obj_empty(p_que)) {
-			sleep(1);
+			usleep(5);
 			continue;
 		}
 
 		// preprocess the data
 		data = que_obj_head(p_que);
 		data_len = BLK_DATA_LEN(data);
-		data = BLK_DATA(data);
+		p_si = (sock_info_p)BLK_DATA(data);
+		sock_info_show(p_si);
+		
+		buffer_clear(p_rdbuf);	
+		nonblk_recvfrom(p_si->fd, p_rdbuf, &recv_stat);
+		buffer_clear(p_wrbuf);
+		if (recv_stat&RECV_OK && buffer_data_len(p_rdbuf) > 0) {
+			// data process
+			if (0 != p_worker->p_proc_f(p_worker->p_ctx, p_rdbuf, p_wrbuf, &proc_stat)) {
+				break;
+			}
+		}
 
-		//fprintf(stdout, "%s,%d\n", __FUNCTION__, __LINE__);
-		// data process
-		if (0 != p_worker->p_proc_f(p_worker->p_ctx, data, data_len)) {
-			break;
+		switch (proc_stat) {
+			case PROC_ST_INIT:
+				break;
+			case PROC_ST_BRKOUT: 
+				r_flag = 0;
+				break;
+			case PROC_ST_SENDBUF:
+				nonblk_sendto(p_si->fd, p_si->src_ip, p_si->src_port, p_wrbuf, &send_stat);	
+				break;
+			case PROC_ST_ERR:
+				break;
+			default:
+				break;
 		}
 
 		// postprocess the data
@@ -183,6 +225,22 @@ static void *worker_cb_dft(void *arg)
 	return NULL;
 }
 
+static u32_t dig_hash(i8_p key, i32_t key_size)
+{
+	u32_t val = 0;
+
+	while (key_size-- > 0) {
+		val = (val << 5) + *(key++);
+	}
+
+	return val;
+}
+
+static i32_t sel_que_by_ip(u32_t ip, i32_t que_num)
+{
+	return dig_hash((i8_p)&ip, sizeof(ip)) % que_num;
+}
+
 static void * access_cb_dft(void *arg)
 {
 	i32_t 		que_sel = 0; // select queue
@@ -190,7 +248,7 @@ static void * access_cb_dft(void *arg)
 	que_obj_p 	p_sel_que = NULL;
 	access_p 	p_acc = (access_p)arg;
 	accessor_p	accessor = &p_acc->accessor;
-	sock_info_p p_sock_info;
+	sock_info_t sock_info;
 	
 	while (1) {
 		// detect there is any data
@@ -199,14 +257,18 @@ static void * access_cb_dft(void *arg)
 		}
 
 		// get data
-		while (accessor_check_status(accessor, &p_sock_info)) {
+		while (accessor_check_status(accessor, &sock_info)) {
 			// select the queue for sending data
-			que_sel = 0;
+			que_sel = sel_que_by_ip(sock_info.src_ip, p_acc->que_num);
+			fprintf(stdout, "select queue [%d]\n", que_sel);
 			p_sel_que = p_acc->p_ques[que_sel];
 			
 			// get buffer for storing received data.
 			buff.size = BLK_SIZE(p_sel_que); // the size is total block size substracted the block header
 			buff.buf = que_obj_next_freeblk(p_sel_que); // it includes the block header
+			
+			memcpy(BLK_DATA(buff.buf), &sock_info, sizeof(sock_info_t));
+			buff.len = sizeof(sock_info_t);
 
 			// receive data.
 		

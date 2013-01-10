@@ -20,8 +20,20 @@ i32_t buffer_init(buffer_p p_buf, i32_t size);
 
 i32_t buffer_enlarge(buffer_p p_buf, i32_t new_size);
 
+//
+i32_t buffer_append(buffer_p p_buf, i8_p p_data, i32_t data_len);
+
 // refer to extenal buffer
 i32_t buffer_set(buffer_p p_buf, i8_p buf, i32_t size);
+
+// clear data in buffer, also its length.
+i32_t buffer_clear(buffer_p p_buf);
+
+i8_p buffer_data(buffer_p p_buf);
+// 
+i32_t buffer_data_len(buffer_p p_buf);
+i32_t buffer_size(buffer_p p_buf);
+
 // 
 i32_t buffer_destroy(buffer_p p_buf);
 

@@ -20,8 +20,15 @@ typedef void * (*access_func_p)(void *arg);
 // callback function of thread
 typedef void * (*worker_func_p)(void *arg);
 // callback function of data process
-typedef i32_t (*worker_data_fproc_p)(context_t ctx, void *user_data, i32_t data_len);
+typedef i32_t (*worker_data_fproc_p)(context_t ctx, buffer_p p_rdbuf, buffer_p p_wrbuf, i32_t *proc_st);
 typedef i32_t (*context_clean_func_p)(context_t ctx);
+
+enum {
+	PROC_ST_INIT = 0x00,
+	PROC_ST_BRKOUT, 	// break out.
+	PROC_ST_SENDBUF, 	// sent data in write buffer.
+	PROC_ST_ERR,		// error occurs while processing data.
+};
 
 typedef struct worker_s {
 	worker_id_t				id; //here is the thread or process id
@@ -30,6 +37,8 @@ typedef struct worker_s {
 	context_t 				p_ctx;
 	context_clean_func_p 	p_ctx_clean_f;	
 	que_obj_p				p_que;
+	buffer_t				rdbuf;
+	buffer_t				wrbuf;
 }worker_t, *worker_p;
 
 typedef struct _access_s {
