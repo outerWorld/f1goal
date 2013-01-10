@@ -36,6 +36,7 @@ i32_t buffer_data_len(buffer_p p_buf)
 i8_p buffer_data(buffer_p p_buf)
 {
 	if (p_buf) return p_buf->buf;
+
 	return NULL;
 }
 
@@ -64,7 +65,7 @@ i32_t buffer_append(buffer_p p_buf, i8_p p_data, i32_t data_len)
 	if (cap >= data_len) len = data_len;
 	else len = cap;
 
-	memcpy(p_buf->buf+p_buf->len, p_buf->buf, len);
+	memcpy(p_buf->buf+p_buf->len, p_data, len);
 	p_buf->len += len;
 	p_buf->buf[p_buf->len] = '\0';
 
@@ -93,8 +94,8 @@ i32_t buffer_destroy(buffer_p p_buf)
 
 i32_t buffer_show(buffer_p p_buf)
 {
-	fprintf(stdout, "buffer status: size=%d, len=%d, address=%p\n",
-			p_buf->size, p_buf->len, p_buf->buf);
+	fprintf(stdout, "buffer status: size=%d, len=%d, address=%p\n[%.*s]\n",
+			p_buf->size, p_buf->len, p_buf->buf, p_buf->len, p_buf->buf);
 
 	return F1G_OK;
 }

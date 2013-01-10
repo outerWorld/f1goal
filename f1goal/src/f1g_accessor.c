@@ -55,7 +55,7 @@ i32_t nonblk_recvfrom(i32_t fd, buffer_p p_buf, i32_t *recv_stat)
 	socklen_t addr_len = 0;
 	struct sockaddr_in addr;
 
-	*recv_stat = RECV_OK;
+	*recv_stat = RECV_INIT;
 	addr_len = sizeof(addr);
 	while (!recv_flag && len < p_buf->size) {
 		recv_len = recvfrom(fd, p_buf->buf + len, p_buf->size-len, 0, (struct sockaddr*)&addr, &addr_len);
@@ -69,7 +69,7 @@ i32_t nonblk_recvfrom(i32_t fd, buffer_p p_buf, i32_t *recv_stat)
 						*recv_stat |= RECV_TIMEOUT;
 						recv_flag = 1;
 					}
-					usleep(5);	// wait for data be ok
+					usleep(1);	// wait for data be ok
 					break;
 				case EBADF:
 				case ECONNREFUSED:
@@ -77,10 +77,12 @@ i32_t nonblk_recvfrom(i32_t fd, buffer_p p_buf, i32_t *recv_stat)
 				case EINVAL:
 				case ENOTSOCK:
 				case ENOTCONN:
+					*recv_stat &= RECV_ERR;
 					*recv_stat &= ~RECV_OK;
 					recv_flag = 1;
 					break;
 				default:
+					*recv_stat &= RECV_ERR;
 					*recv_stat &= ~RECV_OK;
 					recv_flag = 1;
 					break;
@@ -90,6 +92,7 @@ i32_t nonblk_recvfrom(i32_t fd, buffer_p p_buf, i32_t *recv_stat)
 			*recv_stat |= RECV_DISC;
 			recv_flag = 1;
 		} else {
+			*recv_stat |= RECV_OK;
 			len += recv_len;
 			fprintf(stdout, "%s get %d bytes\n", __FUNCTION__, recv_len);
 		}
@@ -317,6 +320,7 @@ i32_t accessor_check_status(accessor_p p_acc, sock_info_p p_si)
 							fprintf(stderr, "epoll_ctl EPOLL_CTL_DEL %d fail\n", cli_fd);
 							return 0;
 						}
+						close(ev_fd);
 					}
 					if (ev->events & EPOLLERR) {
 						fprintf(stdout, " event EPOLLERR for [%d]\n", cli_fd);
@@ -325,9 +329,10 @@ i32_t accessor_check_status(accessor_p p_acc, sock_info_p p_si)
 						if (p_add_info) free(p_add_info);
 						p_add_info = NULL;
 						if (0 != epoll_ctl(p_ep->accessor_id, EPOLL_CTL_DEL, ev_fd, &new_ev)) {
-							fprintf(stderr, "epoll_ctl EPOLL_CTL_DEL %d fail\n", cli_fd);
+							fprintf(stderr, "epoll_ctl EPOLL_CTL_DEL %d fail [%d,%s]\n", cli_fd, errno, strerror(errno));
 							return 0;
 						}
+						close(ev_fd);
 					}
 					if (ev->events & EPOLLIN) {
 						fprintf(stdout, "events EPOLLIN for [%d]\n", ev_fd);

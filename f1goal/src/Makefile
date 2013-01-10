@@ -1,5 +1,6 @@
 INC=-I../include
 CC=gcc
+C_FLAGS=-g
 ALL_OBJS=
 
 include Makefile.am
@@ -7,7 +8,7 @@ include Makefile.am
 ALL_OBJS += ${OBJS}
 
 %.o:%.c
-	${CC} -c $< ${INC}
+	${CC} -c $< ${INC} ${C_FLAGS}
 
 .PHONY:all clean 
 

@@ -71,10 +71,12 @@ typedef struct _accessor_s {
 }accessor_t, *accessor_p;
 
 enum {
-	RECV_OK = 0x01, // the lowest bit: 1 (ok), 0(error)
-	RECV_TIMEOUT = 0x02,
-	RECV_DISC = 0x04, // disconnected found
-	RECV_MEM_LACK = 0x08 // maybe need more memory.
+	RECV_INIT = 0x00,
+	RECV_OK = 0x01,
+	RECV_ERR = 0x02, // the lowest bit: 1 (ok), 0(error)
+	RECV_TIMEOUT = 0x04,
+	RECV_DISC = 0x08, // disconnected found
+	RECV_MEM_LACK = 0x10 // maybe need more memory.
 };
 i32_t nonblk_recvfrom(i32_t fd, buffer_p p_buf, i32_t *recv_stat);
 i32_t nonblk_sendto(i32_t fd, u32_t ip, u16_t port, buffer_p p_buf, i32_t *send_stat);

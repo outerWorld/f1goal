@@ -81,6 +81,7 @@ static i32_t worker_data_fproc_dft(context_t ctx, buffer_p p_rdbuf,
 	
 	buffer_append(p_wrbuf, buffer_data(p_rdbuf), buffer_data_len(p_rdbuf));
 	buffer_append(p_wrbuf, response, strlen(response));
+	//buffer_show(p_wrbuf);
 
 	// tell the caller to send buffer to client.
 	*proc_st = PROC_ST_SENDBUF;
@@ -121,8 +122,8 @@ serv_object_p serv_create(server_conf_p p_conf)
 		p_obj->p_workers[i].p_proc_f = worker_data_fproc_dft;
 		p_obj->p_workers[i].p_worker_f = worker_cb_dft;
 		p_obj->p_access->p_ques[i] = p_que;
-		buffer_init(&p_obj->p_workers[i].rdbuf, 1024);
-		buffer_init(&p_obj->p_workers[i].wrbuf, 1024);
+		buffer_init(&p_obj->p_workers[i].rdbuf, 2048);
+		buffer_init(&p_obj->p_workers[i].wrbuf, 2048);
 	}
 
 	if (F1G_OK != accessor_init(&p_obj->p_access->accessor, LINKER_EPOLL, SOCK_TYPE_LTCP, p_conf->serv_win)) {
@@ -191,14 +192,21 @@ static void *worker_cb_dft(void *arg)
 		data_len = BLK_DATA_LEN(data);
 		p_si = (sock_info_p)BLK_DATA(data);
 		sock_info_show(p_si);
-		
-		buffer_clear(p_rdbuf);	
-		nonblk_recvfrom(p_si->fd, p_rdbuf, &recv_stat);
-		buffer_clear(p_wrbuf);
-		if (recv_stat&RECV_OK && buffer_data_len(p_rdbuf) > 0) {
-			// data process
-			if (0 != p_worker->p_proc_f(p_worker->p_ctx, p_rdbuf, p_wrbuf, &proc_stat)) {
-				break;
+		if (SST_DATA_IN == p_si->sock_status) {
+			buffer_clear(p_rdbuf);	
+			nonblk_recvfrom(p_si->fd, p_rdbuf, &recv_stat);
+			buffer_clear(p_wrbuf);
+			if (recv_stat&RECV_OK && buffer_data_len(p_rdbuf) > 0) {
+				// data process
+				//buffer_show(p_rdbuf);
+				if (0 != p_worker->p_proc_f(p_worker->p_ctx, p_rdbuf, p_wrbuf, &proc_stat)) {
+					break;
+				}
+			}
+			fprintf(stdout, "recv_stat = %08x, %08x\n", recv_stat, recv_stat&RECV_DISC);
+			if (recv_stat & RECV_DISC) {
+				fprintf(stdout, "it seems %d has disconnected", p_si->fd);
+				close(p_si->fd);
 			}
 		}
 
