@@ -11,6 +11,9 @@
 #include "f1g_queue.h"
 #include "f1g_server_conf.h"
 
+// default file path of server configuration
+#define DEFAULT_SERV_CONF_FPATH "serv.conf"
+
 typedef que_obj_p queue_p;
 typedef pthread_t worker_id_t;
 typedef pthread_t access_id_t;

@@ -113,7 +113,8 @@ static i32_t ini_read(smart_conf_p p_conf, string_t conf_file) {
 	i32_t item_seq = 0;
 
 	fd = open(conf_file, O_RDONLY);
-	if (fd <= 0) { return F1G_ERR; }
+	// note: previous condition is fd<=0, which will work abnormally under daemon mode, so fix it with fd < 0
+	if (fd < 0) { return F1G_ERR; }
 	if (fstat(fd, &st) != 0) { return F1G_ERR; }
 	read_remain = st.st_size;
 	buf_size = st.st_blksize;

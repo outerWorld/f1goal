@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <stdarg.h>
+
 #include "f1g_buffer.h"
 
 i32_t buffer_init(buffer_p p_buf, i32_t size)
@@ -18,11 +20,43 @@ i32_t buffer_init(buffer_p p_buf, i32_t size)
 
 i32_t buffer_enlarge(buffer_p p_buf, i32_t new_size)
 {
+	i8_p p_tmp = 0;
+
+	if (new_size < p_buf->size) return F1G_OK;
+	if (BUF_FLAG_REF == p_buf->flag) return F1G_ERR;
+
+	if (new_size <= 0) new_size = 512;
+
+	p_tmp = p_buf->buf;
+	p_buf->buf = (i8_p)malloc(new_size);
+	if (!p_buf->buf) {
+		p_buf->buf = p_tmp;
+		return F1G_ERR;
+	}	
+	p_buf->size = new_size;
+	if (p_buf->len > 0) memcpy(p_buf->buf, p_tmp, p_buf->len);
+	if (p_tmp) free(p_tmp);
+
 	return F1G_OK;
 }
 
+/*
+ * 
+ */
 i32_t buffer_set(buffer_p p_buf, i8_p buf, i32_t size)
 {
+	// Attention: here i do not have a good idea how to process
+	// the flag with BUF_FLAG_ALLO, so let it return F1G_ERR first.
+	// maybe some real applicant environments may help solve it.
+	if (BUF_FLAG_ALLO == p_buf->flag) {
+		return F1G_ERR;
+	} else if (BUF_FLAG_REF == p_buf->flag) {
+		p_buf->buf = buf;
+		p_buf->size = size;	
+	} else {
+		return F1G_ERR;
+	}
+
 	return F1G_OK;
 }
 
@@ -69,6 +103,30 @@ i32_t buffer_append(buffer_p p_buf, i8_p p_data, i32_t data_len)
 	p_buf->len += len;
 	p_buf->buf[p_buf->len] = '\0';
 
+	return F1G_OK;
+}
+
+i32_t buffer_append_format(buffer_p p_buf, string_t fmt, ...)
+{
+	va_list vl;
+	i32_t len = 0;
+	i32_t cap = 0;
+	
+	cap = buffer_cap(p_buf);
+	va_start(vl, fmt);
+	len = vsnprintf(p_buf->buf + p_buf->len, cap, fmt, vl);
+	if (len < 0) return F1G_ERR;
+	else if (len > cap) {
+		if (F1G_OK != buffer_enlarge(p_buf, p_buf->size + len + 128))
+			return F1G_ERR;
+		len = vsnprintf(p_buf->buf + p_buf->len, cap, fmt, vl);
+	}
+
+	p_buf->len += len;
+	p_buf->buf[p_buf->len] = '\0';
+
+
+	va_end(vl);
 	return F1G_OK;
 }
 

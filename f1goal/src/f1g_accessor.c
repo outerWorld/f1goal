@@ -60,7 +60,7 @@ i32_t nonblk_recvfrom(i32_t fd, buffer_p p_buf, i32_t *recv_stat)
 	while (!recv_flag && len < p_buf->size) {
 		recv_len = recvfrom(fd, p_buf->buf + len, p_buf->size-len, 0, (struct sockaddr*)&addr, &addr_len);
 		if (-1 == recv_len) {
-			fprintf(stdout, "%s errno = %d,%s\n", __FUNCTION__, errno, strerror(errno));
+			//fprintf(stdout, "%s errno = %d,%s\n", __FUNCTION__, errno, strerror(errno));
 			switch (errno) {
 				case EINTR:
 				case EAGAIN:
@@ -94,17 +94,17 @@ i32_t nonblk_recvfrom(i32_t fd, buffer_p p_buf, i32_t *recv_stat)
 		} else {
 			*recv_stat |= RECV_OK;
 			len += recv_len;
-			fprintf(stdout, "%s get %d bytes\n", __FUNCTION__, recv_len);
+			//fprintf(stdout, "%s get %d bytes\n", __FUNCTION__, recv_len);
 		}
 	}
 
 	if (len >= p_buf->size) {
 		*recv_stat |= RECV_MEM_LACK;
-		fprintf(stdout, "%s detect RECV_MEM_LACK\n", __FUNCTION__);
+		//fprintf(stdout, "%s detect RECV_MEM_LACK\n", __FUNCTION__);
 	}
 	p_buf->len = len;
 	p_buf->buf[len] = '\0';
-	fprintf(stdout, "%s total %d bytes\n", __FUNCTION__, len);
+	//fprintf(stdout, "%s total %d bytes\n", __FUNCTION__, len);
 
 	return F1G_OK;
 }
@@ -133,7 +133,7 @@ static i32_t epoller_init(epoller_p p_ep, i32_t sock_type, string_t paras)
 
 	p_ep->accessor_id = epoll_create(512);
 	if (-1 == p_ep->accessor_id) {
-		fprintf(stderr, "epoll_create fail [%d,%s]\n", errno, strerror(errno));
+		//fprintf(stderr, "epoll_create fail [%d,%s]\n", errno, strerror(errno));
 		return F1G_ERR;
 	}
 	
@@ -152,7 +152,7 @@ static i32_t epoller_init(epoller_p p_ep, i32_t sock_type, string_t paras)
 	p_add_info->src_port = addr.sin_port;
 	ev.data.ptr = p_add_info;
 	if (0 != epoll_ctl(p_ep->accessor_id, EPOLL_CTL_ADD, p_ep->listen_fd, &ev)) {
-		fprintf(stderr, "epoll_ctl EPOLL_CTL_ADD %d fail [%d,%s]\n", p_ep->listen_fd, errno, strerror(errno));
+		//fprintf(stderr, "epoll_ctl EPOLL_CTL_ADD %d fail [%d,%s]\n", p_ep->listen_fd, errno, strerror(errno));
 		return F1G_ERR;
 	}
 
@@ -166,7 +166,7 @@ static i32_t epoller_init(epoller_p p_ep, i32_t sock_type, string_t paras)
 	}
 
 	if (0 != listen(p_ep->listen_fd, 64)) {
-		fprintf(stderr, "%d listen failed [%d,%s]\n", p_ep->listen_fd, errno, strerror(errno));
+		//fprintf(stderr, "%d listen failed [%d,%s]\n", p_ep->listen_fd, errno, strerror(errno));
 		return F1G_ERR;
 	}
 
@@ -246,13 +246,13 @@ i32_t accessor_detect(accessor_p p_acc)
 	}
 
 	if (n < 0) {
-		fprintf(stderr, "epoll_wait fail [%d,%s]\n", errno, strerror(errno));
+		//fprintf(stderr, "epoll_wait fail [%d,%s]\n", errno, strerror(errno));
 		// check whether the error can be ignored, if so, set n be 0
 		if (EINTR == errno) {
 			n = 0;
 		}
 	} else if (n > 0) {
-		fprintf(stdout, "epoll_wait [%d] events \n", n);
+		//fprintf(stdout, "epoll_wait [%d] events \n", n);
 	}
 
 	return n;
@@ -281,9 +281,9 @@ i32_t accessor_check_status(accessor_p p_acc, sock_info_p p_si)
 				if (p_add_info->fd == p_ep->listen_fd) {
 					cli_fd = accept(p_ep->listen_fd, (struct sockaddr*)&cli_addr, &addr_len);
 					if (-1 == cli_fd) {
-						fprintf(stderr, "listener %d accept fail [%d,%s]\n", p_ep->listen_fd, errno, strerror(errno));
+						//fprintf(stderr, "listener %d accept fail [%d,%s]\n", p_ep->listen_fd, errno, strerror(errno));
 					} else {
-						fprintf(stdout, "listener %d accept %d successfully\n", p_ep->listen_fd, cli_fd);
+						//fprintf(stdout, "listener %d accept %d successfully\n", p_ep->listen_fd, cli_fd);
 						set_sockfd_nonblk(cli_fd);
 						memset(&new_ev, 0x00, sizeof(struct epoll_event));
 						new_ev.events = EPOLLIN | EPOLLET | EPOLLERR | EPOLLHUP;
@@ -300,7 +300,7 @@ i32_t accessor_check_status(accessor_p p_acc, sock_info_p p_si)
 						//new_ev.data.fd = cli_fd;
 						new_ev.data.ptr = p_add_info;
 						if (0 != epoll_ctl(p_ep->accessor_id, EPOLL_CTL_ADD, cli_fd, &new_ev)) {
-							fprintf(stderr, "epoll_ctl EPOLL_CTL_ADD client fd %d fail\n", cli_fd);
+							//fprintf(stderr, "epoll_ctl EPOLL_CTL_ADD client fd %d fail\n", cli_fd);
 							return 0;
 						}
 					}
@@ -309,37 +309,37 @@ i32_t accessor_check_status(accessor_p p_acc, sock_info_p p_si)
 					memcpy(p_si, p_add_info, sizeof(sock_info_t));
 					p_si->sock_status = SST_UNKNOWN; // because it won't process all the events occured
 					ev_fd = p_add_info->fd;
-					fprintf(stdout, "events[%08x] for socket[%d]\n", ev->events, ev_fd);
+					//fprintf(stdout, "events[%08x] for socket[%d]\n", ev->events, ev_fd);
 					if (ev->events & EPOLLHUP) {
-						fprintf(stdout, "events EPOLLHUP for [%d]\n", ev_fd);
+						//fprintf(stdout, "events EPOLLHUP for [%d]\n", ev_fd);
 						p_si->sock_status = SST_DISC;
 						new_ev.events = 0;
 						if (p_add_info) free(p_add_info);
 						p_add_info = NULL;
 						if (0 != epoll_ctl(p_ep->accessor_id, EPOLL_CTL_DEL, ev_fd, &new_ev)) {
-							fprintf(stderr, "epoll_ctl EPOLL_CTL_DEL %d fail\n", cli_fd);
+							//fprintf(stderr, "epoll_ctl EPOLL_CTL_DEL %d fail\n", cli_fd);
 							return 0;
 						}
 						close(ev_fd);
 					}
 					if (ev->events & EPOLLERR) {
-						fprintf(stdout, " event EPOLLERR for [%d]\n", cli_fd);
+						//fprintf(stdout, " event EPOLLERR for [%d]\n", cli_fd);
 						p_si->sock_status = SST_ERR;
 						new_ev.events = 0;
 						if (p_add_info) free(p_add_info);
 						p_add_info = NULL;
 						if (0 != epoll_ctl(p_ep->accessor_id, EPOLL_CTL_DEL, ev_fd, &new_ev)) {
-							fprintf(stderr, "epoll_ctl EPOLL_CTL_DEL %d fail [%d,%s]\n", cli_fd, errno, strerror(errno));
+							//fprintf(stderr, "epoll_ctl EPOLL_CTL_DEL %d fail [%d,%s]\n", cli_fd, errno, strerror(errno));
 							return 0;
 						}
 						close(ev_fd);
 					}
 					if (ev->events & EPOLLIN) {
-						fprintf(stdout, "events EPOLLIN for [%d]\n", ev_fd);
+						//fprintf(stdout, "events EPOLLIN for [%d]\n", ev_fd);
 						p_si->sock_status = SST_DATA_IN;
 					}
 					if (ev->events & EPOLLOUT) {
-						fprintf(stdout, "events EPOLLOUT for [%d]\n", ev_fd);
+						//fprintf(stdout, "events EPOLLOUT for [%d]\n", ev_fd);
 						p_si->sock_status = SST_DATA_OUT;
 					}
 					// other events

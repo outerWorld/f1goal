@@ -191,7 +191,7 @@ static void *worker_cb_dft(void *arg)
 		data = que_obj_head(p_que);
 		data_len = BLK_DATA_LEN(data);
 		p_si = (sock_info_p)BLK_DATA(data);
-		sock_info_show(p_si);
+		//sock_info_show(p_si);
 		if (SST_DATA_IN == p_si->sock_status) {
 			buffer_clear(p_rdbuf);	
 			nonblk_recvfrom(p_si->fd, p_rdbuf, &recv_stat);
@@ -203,9 +203,9 @@ static void *worker_cb_dft(void *arg)
 					break;
 				}
 			}
-			fprintf(stdout, "recv_stat = %08x, %08x\n", recv_stat, recv_stat&RECV_DISC);
+			//fprintf(stdout, "recv_stat = %08x, %08x\n", recv_stat, recv_stat&RECV_DISC);
 			if (recv_stat & RECV_DISC) {
-				fprintf(stdout, "it seems %d has disconnected", p_si->fd);
+				//fprintf(stdout, "it seems %d has disconnected", p_si->fd);
 				close(p_si->fd);
 			}
 		}
@@ -268,7 +268,7 @@ static void * access_cb_dft(void *arg)
 		while (accessor_check_status(accessor, &sock_info)) {
 			// select the queue for sending data
 			que_sel = sel_que_by_ip(sock_info.src_ip, p_acc->que_num);
-			fprintf(stdout, "select queue [%d]\n", que_sel);
+			//fprintf(stdout, "select queue [%d]\n", que_sel);
 			p_sel_que = p_acc->p_ques[que_sel];
 			
 			// get buffer for storing received data.

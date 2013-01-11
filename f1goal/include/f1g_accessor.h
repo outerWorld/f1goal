@@ -85,10 +85,10 @@ i32_t accessor_init(accessor_p p_acc, i32_t link_mode, i32_t sock_type, string_t
 
 accessor_p accessor_create(i32_t link_type, i32_t sock_type, string_t paras);
 
-// detect there is any data in accessor, 0x00(yes), 0x01(no), 0x02(other)
+// it returns the event number
 i32_t accessor_detect(accessor_p p_acc);
 
-// it returns the number of data not fetched in accessor
+// it returns the next event to be processed
 i32_t accessor_check_status(accessor_p p_acc, sock_info_p p_si);
 
 i32_t accessor_get_data(accessor_p p_acc);

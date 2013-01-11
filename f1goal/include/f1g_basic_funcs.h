@@ -49,6 +49,8 @@ i32_t time_interval_tv(struct timeval *tvb, struct timeval *tve, struct timeval 
 // return interval by unit USeconds
 i32_t time_interval(struct timeval *tvb, struct timeval *tve);
 
+i32_t set_daemon(string_t exec_name);
+
 #ifdef __cplusplus
 }
 #endif

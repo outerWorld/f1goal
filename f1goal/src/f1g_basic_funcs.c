@@ -3,6 +3,11 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <signal.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include <time.h>
 #include "f1g_basic_funcs.h"
 
@@ -194,3 +199,31 @@ i32_t time_interval(struct timeval *tvb, struct timeval *tve)
 
 	return tv.tv_sec*1000000+tv.tv_usec;
 }
+
+i32_t set_daemon(string_t exec_name)
+{
+	i32_t i = 0;
+	pid_t pid;
+
+	pid = fork();
+	if (pid < 0) {
+		return F1G_ERR;
+	} else if (0 != pid) {
+		// parent process exit.
+		//fprintf(stdout, "%s parent process %d exit!\n", exec_name, getpid());
+		exit(0);
+	}
+
+	//fprintf(stdout, "exec_name subprocess %d running\n", exec_name, getpid());
+
+	setsid();
+	chdir("/");
+	umask(0);
+	
+	for (i=0; i<3; i++) {
+		close(i);
+	}
+
+	return F1G_OK;
+}
+
