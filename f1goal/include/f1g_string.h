@@ -21,7 +21,6 @@ typedef struct _c_string_s {
 	i8_p  data;	
 }c_string_t, *c_string_p;
 
-
 i8_t c_string_set(c_string_p p_str, i8_p data, i32_t len);
 
 #ifdef __cplusplus
