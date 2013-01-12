@@ -74,6 +74,8 @@ typedef struct _http_res_header_s {
 
 i8_t http_req_header_parser(http_req_header_p p_req, const i8_p p_data, const i32_t data_len);
 
+i32_t http_req_header_clear(http_req_header_p p_req);
+
 i8_t http_req_header_print(http_req_header_p p_req);
 
 i8_t http_res_header_parser(http_res_header_p p_res, const i8_p p_data, const data_len);

@@ -185,6 +185,11 @@ i8_t http_req_header_parser(http_req_header_p p_req, const i8_p p_data, const i3
 	return F1G_OK;
 }
 
+i32_t http_req_header_clear(http_req_header_p p_req)
+{
+	memset(p_req, 0x00, sizeof(http_req_header_t));
+}
+
 i8_t http_res_header_parser(http_res_header_p p_res, const i8_p p_data, const data_len)
 {
 	return F1G_OK;
