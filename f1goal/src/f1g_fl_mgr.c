@@ -6,6 +6,51 @@
 #include "f1g_smart_conf.h"
 #include "f1g_fl_mgr.h"
 
+
+i32_t fl_mgr_enlarge_host_cap(fl_mgr_p p_fm, i32_t new_cap)
+{
+	host_fl_list_p p_tmp = NULL;
+
+	if (new_cap < p_fm->host_cap) return F1G_ERR;
+
+	if (new_cap <= 0) new_cap = 4;
+	
+	p_tmp = (host_fl_list_p)malloc(sizeof(host_fl_list_t)*new_cap);
+	if (!p_tmp) return F1G_ERR;
+	memset(p_tmp, 0x00, sizeof(host_fl_list_t)*new_cap);
+
+	if (p_fm->host_num > 0) memcpy(p_tmp, p_fm->p_hfl, sizeof(host_fl_list_t)*p_fm->host_num);
+
+	if (p_fm->p_hfl) free(p_fm->p_hfl);
+	
+	p_fm->p_hfl = p_tmp;
+	p_fm->host_cap = new_cap;
+
+	return F1G_OK;
+}
+
+i32_t host_fl_list_enlarge_cap(host_fl_list_p p_hfl, i32_t new_cap)
+{
+	host_fl_p p_tmp = NULL;
+
+	if (new_cap < p_hfl->fl_cap) return F1G_ERR;
+
+	if (new_cap <= 0) new_cap = 64;
+
+	p_tmp = (host_fl_p)malloc(sizeof(host_fl_list_t)*new_cap);
+	if (!p_tmp) return F1G_ERR;
+	memset(p_tmp, 0x00, sizeof(host_fl_list_t)*new_cap);
+
+	if (p_hfl->fl_num > 0) memcpy(p_tmp, p_hfl->p_fls, sizeof(host_fl_list_t)*p_hfl->fl_num);
+
+	if (p_hfl->p_fls) free(p_hfl->p_fls);
+
+	p_hfl->p_fls = p_tmp;
+	p_hfl->fl_cap = new_cap;
+
+	return F1G_OK;
+}
+
 /*  file format:
  *	[host_path]
  *	host_num = 2
@@ -41,10 +86,23 @@ i32_t fl_mgr_load(fl_mgr_p p_fm, string_t host_paths)
 	//
 	if (p_fm->host_cap < host_num) {
 		// enlarge
+		if (F1G_OK != fl_mgr_enlarge_host_cap(p_fm, host_num + 5)) {
+			goto _load_exit;
+		}
 	}
 
 	for (i=0; i<host_num; i++) {
 		p_fll = &p_fm->p_hfl[i];
+		snprinf(item, ITEM_NAME_SIZE, "host[%d]", i);
+		if (F1G_OK != smart_conf_get_str("host_path", item, "", p_fll->host, HOST_SIZE)) {
+			goto _load_exit;
+		}
+
+		if (F1G_OK != smart_conf_get_str(p_fll->host, "path", "", p_fll->path, HOST_PATH_SIZE)) {
+			goto _load_exit;
+		}
+	
+		// traverse the path, get all the files into memory.
 	}
 
 	ret = F1G_OK;

@@ -33,6 +33,8 @@ typedef struct _host_fl_list_s {
 	host_fl_p 	p_fls; //
 }host_fl_list_t, *host_fl_list_p;
 
+i32_t host_fl_list_enlarge_cap(host_fl_list_p p_hfl, i32_t new_cap);
+
 // file manager
 typedef struct _fl_mgr_s {
 	i32_t			host_num;
@@ -56,6 +58,8 @@ i32_t fl_mgr_load(fl_mgr_p p_fm, string_t host_paths);
 i32_t fl_mgr_init(fl_mgr_p p_fm, i32_t host_cap, i32_t fl_cap);
 
 fl_mgr_p fl_mgr_create(i32_t host_cap, i32_t fl_cap, string_t host_paths);
+
+i32_t fl_mgr_enlarge_host_cap(fl_mgr_p p_fm, i32_t new_cap);
 
 i32_t fl_mgr_addhost(fl_mgr_p p_fm, string_t host, string_path);
 
