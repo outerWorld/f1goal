@@ -53,7 +53,10 @@ typedef struct _value_s {
 }value_t, *value_p;
 
 //
-#define IP_STR_LEN	16
+#define IP_STR_LEN		16
+#define FL_NAME_SIZE	128
+#define HOST_SIZE		128
+#define HOST_PATH_SIZE	256
 
 #ifdef __cplusplus
 }
