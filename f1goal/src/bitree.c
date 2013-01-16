@@ -5,6 +5,13 @@
 
 #include "bitree.h"
 
+
+int bitree_height(bitree_p p_bt)
+{
+	if (!p_bt) return -1;
+	else return p_bt->height;
+}
+
 bitree_p bitree_create(int elem)
 {
 	bitree_p p_bi;
@@ -28,14 +35,16 @@ int bitree_insert(bitree_p p_bt, int elem)
 			p_bt->p_left = bitree_create(elem);
 			if (!p_bt->p_right) height_added = 1;
 		} else {
-			p_bt->p_left->height += bitree_insert(p_bt->p_left, elem);
+			height_added = bitree_insert(p_bt->p_left, elem);
+			p_bt->p_left->height += height_added;
 		}
 	} else if (elem > p_bt->elem) {
 		if (!p_bt->p_right) {
 			p_bt->p_right = bitree_create(elem);
 			if (!p_bt->p_left) height_added = 1;
 		} else {
-			p_bt->p_right->height += bitree_insert(p_bt->p_right, elem);
+			height_added = bitree_insert(p_bt->p_right, elem);
+			p_bt->p_right->height += height_added;
 		}
 	} else {
 	}
@@ -49,6 +58,12 @@ int bitree_del(bitree_p p_bt, int elem)
 
 int bitree_avl_insert(bitree_p p_bt, int elem)
 {
+	if (elem < p_bt->elem) {
+		if (bitree_height(p_bt->left) - bitree_height(p_bt->right) == 2) {
+		}
+	} else if (elem > p_bt->elem) {
+	} else {
+	}
 }
 
 int bitree_avl_del(bitree_p p_bt, int elem)

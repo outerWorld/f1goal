@@ -18,6 +18,8 @@ struct _bitree_s {
 
 bitree_p bitree_create(int elem);
 
+int bitree_height(bitree_p p_bt);
+
 int bitree_insert(bitree_p p_bt, int elem);
 
 int bitree_del(bitree_p p_bt, int elem);
