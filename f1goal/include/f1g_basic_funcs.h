@@ -8,6 +8,15 @@
 extern "C" {
 #endif
 
+#define MEM_ALOC(p_buf, type, size, err_ret) \
+	p_buf = (type)malloc(size); \
+	if (p_buf) return err_ret; \
+	memset(p_buf, 0x00, size);
+
+#define MEM_FREE(p_buf) \
+	if ((p_buf)) free(p_buf); \
+	p_buf = NULL;
+
 void hex_print(FILE* fd, u8_p data, u32_t data_len);
 
 /*

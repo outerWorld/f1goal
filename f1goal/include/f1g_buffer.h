@@ -27,6 +27,7 @@ i32_t buffer_enlarge(buffer_p p_buf, i32_t new_size);
 
 //
 i32_t buffer_append(buffer_p p_buf, i8_p p_data, i32_t data_len);
+
 i32_t buffer_append_format(buffer_p p_buf, string_t fmt, ...);
 
 // refer to extenal buffer
@@ -42,5 +43,7 @@ i32_t buffer_size(buffer_p p_buf);
 
 // 
 i32_t buffer_destroy(buffer_p p_buf);
+
+i32_t buffer_show(buffer_p p_buf);
 
 #endif // __F1G_BUFFER_H
