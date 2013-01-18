@@ -59,7 +59,7 @@ int bitree_del(bitree_p p_bt, int elem)
 int bitree_avl_insert(bitree_p p_bt, int elem)
 {
 	if (elem < p_bt->elem) {
-		if (bitree_height(p_bt->left) - bitree_height(p_bt->right) == 2) {
+		if (bitree_height(p_bt->p_left) - bitree_height(p_bt->p_right) == 2) {
 		}
 	} else if (elem > p_bt->elem) {
 	} else {
