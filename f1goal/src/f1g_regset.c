@@ -34,6 +34,24 @@ regset_p regset_create(i32_t rule_size)
 	return p_rs;
 }
 
+static i32_t regset_enlarge_cap(regset_p p_rs, i32_t size)
+{
+	reg_rule_p p_reg;
+
+	if (size < p_rs->rule_size) return F1G_ERR;
+	if (size <= 0) size = 10;
+	
+	MEM_ALOC(p_reg, reg_rule_p, sizeof(reg_rule_t)*size, F1G_ERR);
+	if (p_rs->rule_num > 0) memcpy(p_reg, p_rs->p_rules, sizeof(reg_rule_t)*p_rs->rule_num);
+
+	if (p_rs->p_rules) free(p_rs->p_rules);
+
+	p_rs->p_rules = p_reg;
+	p_rs->rule_size = size;
+
+	return F1G_OK;
+}
+
 i32_t regset_addreg(regset_p p_rs, string_t reg_rule, string_t value, reg_proc_f_p p_regf)
 {
 	i32_t len = 0;
@@ -55,11 +73,11 @@ i32_t regset_addreg(regset_p p_rs, string_t reg_rule, string_t value, reg_proc_f
 	}
 
 	len = strlen(value);
-	if (F1G_OK != buffer_init(&p_cur->rule, len + 64)) {
+	if (F1G_OK != buffer_init(&p_cur->reg_value, len + 64)) {
 		return F1G_ERR;
 	}
 
-	if (F1G_OK != buffer_append(&p_cur->rule, value, len)) {
+	if (F1G_OK != buffer_append(&p_cur->reg_value, value, len)) {
 		return F1G_ERR;
 	}
 	
@@ -87,7 +105,7 @@ i32_t regset_match(regset_p p_rs, string_t in_data, string_t * out_data)
 		// basic match method, later more will be added.
 		if (NULL != strstr(in_data, buffer_data(&p_cur->rule))) {
 			*out_data = buffer_data(&p_cur->reg_value);
-			break;
+			return F1G_OK;
 		}
 	}
 
