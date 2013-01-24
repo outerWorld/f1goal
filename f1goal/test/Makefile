@@ -1,5 +1,5 @@
 CC=gcc
-TESTS=test_http test_template test_lang_code test_smart_conf test_server test_queue test_cli test_url_parser test_bitree
+TESTS=test_http test_template test_lang_code test_smart_conf test_server test_queue test_cli test_url_parser test_bitree test_basic_alg
 LIB=../lib/libf1goal.a
 C_FLAG=-g
 
@@ -28,6 +28,9 @@ test_url_parser:test_url_parser.o ${LIB}
 	${CC} ${C_FLAG} -o $@ $^
 
 test_bitree:test_bitree.o ${LIB}
+	${CC} ${C_FLAG} -o $@ $^
+
+test_basic_alg:test_basic_alg.o ${LIB}
 	${CC} ${C_FLAG} -o $@ $^
 
 %.o: %.c
