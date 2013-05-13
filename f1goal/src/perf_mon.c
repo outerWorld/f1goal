@@ -141,7 +141,9 @@ int perf_mon_here(int id, int status)
 int perf_statis(int sig_no)
 {
 	int fd, i, len;
+	int fd2;
 	char file[512];
+	char path[512];
 	char buf[512];
 	time_t now;
 	struct tm local = { 0 };
@@ -151,11 +153,19 @@ int perf_statis(int sig_no)
 	time(&now);
 	localtime_r(&now, &local);
 	fprintf(stdout, "%s sig_no =%d\n", __FUNCTION__, sig_no);
+	snprintf(path, sizeof(path), "%d-%d-%d_%d.%d.%d", 2000 + local.tm_year-100, local.tm_mon+1, local.tm_mday, local.tm_hour, local.tm_min, local.tm_sec);
+	mkdir(path, 0777);
+	snprintf(file, sizeof(file), "%s/file_list", path);
+
+	fd2 = open(file, O_WRONLY|O_CREAT, S_IRWXU);
 
 	for (i = 0; i < g_mon.num; i++) {
 		p_point = &g_mon.mon_points[i];
 		p_cur = p_point->p_head;
-		snprintf(file, sizeof(file), "%d-%d-%d_%d.%d.%d_%d.%d.%s.perf", local.tm_year, local.tm_mon, local.tm_mday, local.tm_hour, local.tm_min, local.tm_sec, g_mon.pid, p_point->id, p_point->name);
+		len = snprintf(file, sizeof(file), "%s/%d.%d.%s.perf", path, g_mon.pid, p_point->id, p_point->name);
+		write(fd2, file, len);
+		write(fd2, "\n", 1);
+
 		fd = open(file, O_WRONLY|O_CREAT, S_IRWXU);
 		//fprintf(stdout, "---%p\n", p_cur);
 		while (p_cur) {
@@ -176,6 +186,8 @@ int perf_statis(int sig_no)
 		close(fd);
 		p_point->p_cur = p_point->p_head;
 	}
+	fsync(fd2);
+	close(fd2);
 
 	return 0;
 }

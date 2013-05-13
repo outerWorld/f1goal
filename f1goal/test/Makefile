@@ -1,7 +1,10 @@
 CC=gcc
-TESTS=test_http test_template test_lang_code test_smart_conf test_server test_queue test_cli test_url_parser test_bitree test_basic_alg
+TESTS=test_http test_template test_lang_code test_smart_conf test_server test_queue test_cli test_url_parser test_bitree test_basic_alg test_perf
 LIB=../lib/libf1goal.a
 C_FLAG=-g
+
+test_perf:test_perf.o ${LIB}
+	${CC} ${C_FLAG} -o $@ $^
 
 test_http:test_http.o ${LIB}
 	${CC} ${C_FLAG} -o $@ $^
