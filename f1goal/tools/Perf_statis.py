@@ -32,14 +32,19 @@ def statis(mods_data):
 		# aver, min, max, times
 		sec = 0
 		usec = 0
-		min_usecs = 0
+		min_usecs = 0xffffffff
 		max_usecs = 0
-		statis_data[mod] = [0,0.0,0,0]
+		statis_data[mod] = [0,0,0.0,0,0]
+		real_num = 0
+		zero_count = 0
 		num = len(mods_data[mod])
-		for i in range(0, num):
+		for i in range(1, num):
 			_sec = mods_data[mod][i][0]
 			_usec = mods_data[mod][i][1]
 			__usecs = _sec*1000000 + _usec
+			if __usecs == 0:
+				zero_count += 1
+				continue
 			if min_usecs > __usecs:
 				min_usecs = __usecs
 			if max_usecs < __usecs:
@@ -49,18 +54,20 @@ def statis(mods_data):
 			if usec >= 1000000:
 				sec += usec/1000000
 				usec = usec/1000000
-		statis_data[mod][0] = num
-		statis_data[mod][1] = (sec*1000000 + usec)*1.0/num
-		statis_data[mod][2] = max_usecs
-		statis_data[mod][3] = min_usecs
+			real_num += 1
+		statis_data[mod][0] = real_num
+		statis_data[mod][1] = zero_count
+		statis_data[mod][2] = (sec*1000000 + usec)*1.0/num
+		statis_data[mod][3] = max_usecs
+		statis_data[mod][4] = min_usecs
 	return statis_data
 
 def show(statis_data):
 	
-	print "%s" %("="*(90+8*4))
-	print "%32s\t%10s\t%16s\t%16s\t%16s" %("mod_name", "count", "aver/usecs", "max/usecs", "min/usecs")
+	print "%s" %("="*(10+90+8*5))
+	print "%32s\t%10s\t%10s\t%16s\t%16s\t%16s" %("mod_name", "count", "zero_count", "aver/usecs", "max/usecs", "min/usecs")
 	for mod in statis_data:
-		print "%32s\t%10d\t%16f\t%16d\t%16d" %(mod, statis_data[mod][0], statis_data[mod][1], statis_data[mod][2], statis_data[mod][3])
+		print "%32s\t%10d\t%10d\t%16f\t%16d\t%16d" %(mod, statis_data[mod][0], statis_data[mod][1], statis_data[mod][2], statis_data[mod][3], statis_data[mod][4])
 
 if __name__ == "__main__":
 	if len(sys.argv) > 1:
